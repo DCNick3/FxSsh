@@ -134,7 +134,10 @@ namespace FxSsh
                 while (_socket != null && _socket.Connected)
                 {
                     var message = ReceiveMessage();
-                    HandleMessageCore(message);
+                    if (message is UnknownMessage)
+                        SendMessage((message as UnknownMessage).MakeUnimplementedMessage());
+                    else
+                        HandleMessageCore(message);
                 }
             }
             finally
@@ -339,7 +342,7 @@ namespace FxSsh
             var implemented = _messagesMetadata.ContainsKey(typeNumber);
             var message = implemented
                 ? (Message)Activator.CreateInstance(_messagesMetadata[typeNumber])
-                : new UnimplementedMessage { SequenceNumber = _inboundPacketSequence, UnimplementedMessageType = typeNumber };
+                : new UnknownMessage { SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber };
 
             if (implemented)
                 message.LoadPacket(data);
