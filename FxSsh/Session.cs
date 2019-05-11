@@ -143,15 +143,7 @@ namespace FxSsh
             }
         }
 
-        public void Disconnect()
-        {
-            Disconnect(DisconnectReason.ByApplication, "Connection terminated by the server.");
-
-            if (Disconnected != null)
-                Disconnected(this, EventArgs.Empty);
-        }
-
-        public void Disconnect(DisconnectReason reason, string description)
+        public void Disconnect(DisconnectReason reason = DisconnectReason.ByApplication, string description = "Connection terminated by the server.")
         {
             if (reason == DisconnectReason.ByApplication)
             {
@@ -599,7 +591,6 @@ namespace FxSsh
 
         private void HandleMessage(UnimplementedMessage message)
         {
-            SendMessage(message);
         }
 
         private void HandleMessage(ServiceRequestMessage message)
