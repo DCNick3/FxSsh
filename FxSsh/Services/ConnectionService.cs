@@ -16,7 +16,7 @@ namespace FxSsh.Services
 
         private int _serverChannelCounter = -1;
 
-        public ConnectionService(Session session, UserauthArgs auth)
+        public ConnectionService(ServerSession session, UserauthArgs auth)
             : base(session)
         {
             Contract.Requires(auth != null);

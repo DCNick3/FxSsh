@@ -4,7 +4,7 @@ namespace FxSsh
 {
     public class StartingInfo
     {
-        public const int DefaultPort = 22;
+        public const int DefaultPort = 2222;
 
         public StartingInfo()
             : this(IPAddress.IPv6Any, DefaultPort, "SSH-2.0-FxSsh")

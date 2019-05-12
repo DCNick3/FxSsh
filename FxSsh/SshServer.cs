@@ -30,7 +30,7 @@ namespace FxSsh
 
         public StartingInfo StartingInfo { get; private set; }
 
-        public event EventHandler<Session> ConnectionAccepted;
+        public event EventHandler<ServerSession> ConnectionAccepted;
         public event EventHandler<Exception> ExceptionRasied;
 
         public void Start()
@@ -41,7 +41,7 @@ namespace FxSsh
                 if (_started)
                     throw new InvalidOperationException("The server is already started.");
 
-                _listenser = StartingInfo.LocalAddress == IPAddress.IPv6Any
+                _listenser = Equals(StartingInfo.LocalAddress, IPAddress.IPv6Any)
                     ? TcpListener.Create(StartingInfo.Port) // dual stack
                     : new TcpListener(StartingInfo.LocalAddress, StartingInfo.Port);
                 _listenser.ExclusiveAddressUse = false;
@@ -74,6 +74,7 @@ namespace FxSsh
                     }
                     catch
                     {
+                        // ignored
                     }
                 }
             }
@@ -112,7 +113,7 @@ namespace FxSsh
                 var socket = _listenser.EndAcceptSocket(ar);
                 Task.Run(() =>
                 {
-                    var session = new Session(socket, _hostKey, StartingInfo.ServerBanner);
+                    var session = new ServerSession(socket, _hostKey, StartingInfo.ServerBanner);
                     session.Disconnected += (ss, ee) =>
                     {
                         lock (_lock) _sessions.Remove(session);
@@ -121,26 +122,24 @@ namespace FxSsh
                         _sessions.Add(session);
                     try
                     {
-                        if (ConnectionAccepted != null)
-                            ConnectionAccepted(this, session);
+                        ConnectionAccepted?.Invoke(this, session);
                         session.EstablishConnection();
                     }
                     catch (SshConnectionException ex)
                     {
                         session.Disconnect(ex.DisconnectReason, ex.Message);
-                        if (ExceptionRasied != null)
-                            ExceptionRasied(this, ex);
+                        ExceptionRasied?.Invoke(this, ex);
                     }
                     catch (Exception ex)
                     {
                         session.Disconnect();
-                        if (ExceptionRasied != null)
-                            ExceptionRasied(this, ex);
+                        ExceptionRasied?.Invoke(this, ex);
                     }
                 });
             }
             catch
             {
+                // ignored
             }
             finally
             {

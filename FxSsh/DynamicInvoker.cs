@@ -22,7 +22,7 @@ namespace FxSsh
             {
                 var method = instance.GetType()
                     .GetMethod("HandleMessage",
-                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy,
                     null,
                     new[] { message.GetType() },
                     null);

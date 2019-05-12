@@ -2,6 +2,7 @@
 using FxSsh.Services;
 using MiniTerm;
 using System;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -23,7 +24,7 @@ namespace SshServerLoader
             Task.Delay(-1).Wait();
         }
 
-        static void server_ConnectionAccepted(object sender, Session e)
+        static void server_ConnectionAccepted(object sender, ServerSession e)
         {
             Console.WriteLine("Accepted a client.");
 
@@ -120,6 +121,7 @@ namespace SshServerLoader
             }
             else if (e.ShellType == "exec")
             {
+                /*
                 var parser = new Regex(@"(?<cmd>git-receive-pack|git-upload-pack|git-upload-archive) \'/?(?<proj>.+)\.git\'");
                 var match = parser.Match(e.CommandText);
                 var command = match.Groups["cmd"].Value;
@@ -133,6 +135,10 @@ namespace SshServerLoader
                 git.CloseReceived += (ss, ee) => e.Channel.SendClose(ee);
 
                 git.Start();
+                */
+                
+                e.Channel.SendData(Encoding.UTF8.GetBytes($"you entered: {e.CommandText}\n"));
+                e.Channel.SendEof();
             }
             else if (e.ShellType == "subsystem")
             {

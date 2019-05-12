@@ -7,7 +7,7 @@ namespace FxSsh.Services
 {
     public class UserauthService : SshService, IDynamicInvoker
     {
-        public UserauthService(Session session)
+        public UserauthService(ServerSession session)
             : base(session)
         {
         }
