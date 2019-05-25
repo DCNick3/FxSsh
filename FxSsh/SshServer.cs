@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace FxSsh
     {
         private readonly object _lock = new object();
         private readonly List<Session> _sessions = new List<Session>();
-        private readonly Dictionary<string, string> _hostKey = new Dictionary<string, string>();
+        private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
         private bool _isDisposed;
         private bool _started;
         private TcpListener _listenser = null;
@@ -85,8 +86,16 @@ namespace FxSsh
             Contract.Requires(type != null);
             Contract.Requires(xml != null);
 
+            AddHostKey(type, Convert.FromBase64String(xml));
+        }
+
+        public void AddHostKey(string type, byte[] key)
+        {
+            Contract.Requires(type != null);
+            Contract.Requires(key != null);
+            
             if (!_hostKey.ContainsKey(type))
-                _hostKey.Add(type, xml);
+                _hostKey.Add(type, key.ToArray());
         }
 
         private void BeginAcceptSocket()

@@ -79,8 +79,7 @@ namespace FxSsh.Services
             {
                 var verifed = false;
 
-                var keyAlg = Session._publicKeyAlgorithms[message.KeyAlgorithmName](null);
-                keyAlg.LoadKeyAndCertificatesData(message.PublicKey);
+                var keyAlg = Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);
 
                 var args = new UserauthArgs(base._session, message.Username, message.KeyAlgorithmName, keyAlg.GetFingerprint(), message.PublicKey);
                 Userauth?.Invoke(this, args);

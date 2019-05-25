@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
@@ -8,23 +9,17 @@ namespace FxSsh.Algorithms
     [ContractClass(typeof(PublicKeyAlgorithmContract))]
     public abstract class PublicKeyAlgorithm
     {
-        public PublicKeyAlgorithm(string key)
-        {
-            if (!string.IsNullOrEmpty(key))
-            {
-                var bytes = Convert.FromBase64String(key);
-                ImportKey(bytes);
-            }
-        }
-
         public abstract string Name { get; }
 
-        public string GetFingerprint()
+        public string GetFingerprint(string algo = "md5")
         {
-            using (var md5 = MD5.Create())
+            using (var hash = HashAlgorithm.Create(algo.ToUpper()))
             {
-                var bytes = md5.ComputeHash(CreateKeyAndCertificatesData());
-                return BitConverter.ToString(bytes).Replace('-', ':');
+                Debug.Assert(hash != null, "Invalid hash algorithm");
+                var bytes = hash.ComputeHash(ExportKeyAndCertificatesData());
+                if (algo == "md5")
+                    return BitConverter.ToString(bytes).Replace('-', ':');
+                return Convert.ToBase64String(bytes);
             }
         }
 
@@ -57,13 +52,13 @@ namespace FxSsh.Algorithms
             }
         }
 
-        public abstract void ImportKey(byte[] bytes);
+        public abstract PublicKeyAlgorithm ImportCspBlob(byte[] bytes);
 
-        public abstract byte[] ExportKey();
+        public abstract PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data);
+        
+        public abstract byte[] ExportCspBlob();
 
-        public abstract void LoadKeyAndCertificatesData(byte[] data);
-
-        public abstract byte[] CreateKeyAndCertificatesData();
+        public abstract byte[] ExportKeyAndCertificatesData();
 
         public abstract bool VerifyData(byte[] data, byte[] signature);
 

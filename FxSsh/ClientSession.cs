@@ -36,7 +36,7 @@ namespace FxSsh
         {
             
             var kexAlg = _exchangeContext.NewAlgorithms.KeyExchange;
-            //var hostKeyAlg = _publicKeyAlgorithms[_exchangeContext.PublicKey](message.HostKey);
+            var hostKeyAlg = _publicKeyAlgorithms[_exchangeContext.PublicKey].FromKeyAndCertificatesData(message.HostKey);
             var receiveCipher = _encryptionAlgorithms[_exchangeContext.ReceiveEncryption]();
             var transmitCipher = _encryptionAlgorithms[_exchangeContext.TransmitEncryption]();
             var transmitHmac = _hmacAlgorithms[_exchangeContext.TransmitHmac]();
@@ -62,7 +62,7 @@ namespace FxSsh
             _exchangeContext.NewAlgorithms = new Algorithms
             {
                 KeyExchange = kexAlg,
-                //PublicKey = hostKeyAlg,
+                ServerIdentification = hostKeyAlg,
                 ReceiveEncryption = receiveCipher.Cipher(receiveCipherKey, receiveCipherIV, false),
                 TransmitEncryption = transmitCipher.Cipher(transmitCipherKey, transmitCipherIV, true),
                 ReceiveHmac = receiveHmac.Hmac(receiveHmacKey),

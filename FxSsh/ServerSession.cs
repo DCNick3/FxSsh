@@ -11,12 +11,12 @@ namespace FxSsh
     public class ServerSession : Session
     {
         
-        public ServerSession(Socket socket, Dictionary<string, string> hostKey, string programVersion) : base(socket, programVersion)
+        public ServerSession(Socket socket, Dictionary<string, byte[]> hostKey, string programVersion) : base(socket, programVersion)
         {
             _hostKey = hostKey.ToDictionary(s => s.Key, s => s.Value);
         }
         
-        private readonly Dictionary<string, string> _hostKey;
+        private readonly Dictionary<string, byte[]> _hostKey;
         
         public event EventHandler<SshService> ServiceRegistered;
 
@@ -27,7 +27,7 @@ namespace FxSsh
         protected void HandleMessage(KeyExchangeDhInitMessage message)
         {
             var kexAlg = _keyExchangeAlgorithms[_exchangeContext.KeyExchange]();
-            var hostKeyAlg = _publicKeyAlgorithms[_exchangeContext.PublicKey](_hostKey[_exchangeContext.PublicKey].ToString());
+            var hostKeyAlg = _publicKeyAlgorithms[_exchangeContext.PublicKey].FromCspBlob(_hostKey[_exchangeContext.PublicKey]);
             var receiveCipher = _encryptionAlgorithms[_exchangeContext.ReceiveEncryption]();
             var transmitCipher = _encryptionAlgorithms[_exchangeContext.TransmitEncryption]();
             var transmitHmac = _hmacAlgorithms[_exchangeContext.TransmitHmac]();
@@ -36,7 +36,7 @@ namespace FxSsh
             var clientExchangeValue = message.E;
             var serverExchangeValue = kexAlg.CreateKeyExchange();
             var sharedSecret = kexAlg.DecryptKeyExchange(clientExchangeValue);
-            var hostKeyAndCerts = hostKeyAlg.CreateKeyAndCertificatesData();
+            var hostKeyAndCerts = hostKeyAlg.ExportKeyAndCertificatesData();
             var exchangeHash = ComputeExchangeHash(kexAlg, hostKeyAndCerts, clientExchangeValue, serverExchangeValue, sharedSecret);
 
             if (SessionId == null)
@@ -53,7 +53,7 @@ namespace FxSsh
             _exchangeContext.NewAlgorithms = new Algorithms
             {
                 KeyExchange = kexAlg,
-                PublicKey = hostKeyAlg,
+                ServerIdentification = hostKeyAlg,
                 ReceiveEncryption = receiveCipher.Cipher(receiveCipherKey, receiveCipherIV, false),
                 TransmitEncryption = transmitCipher.Cipher(transmitCipherKey, transmitCipherIV, true),
                 ReceiveHmac = receiveHmac.Hmac(receiveHmacKey),

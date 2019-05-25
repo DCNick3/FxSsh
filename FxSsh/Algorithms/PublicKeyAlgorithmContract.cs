@@ -6,31 +6,27 @@ namespace FxSsh.Algorithms
     [ContractClassFor(typeof(PublicKeyAlgorithm))]
     abstract class PublicKeyAlgorithmContract : PublicKeyAlgorithm
     {
-        public PublicKeyAlgorithmContract()
-            : base(null)
-        {
-        }
 
         public override string Name
         {
             get { throw new NotImplementedException(); }
         }
 
-        public override void ImportKey(byte[] bytes)
+        public override PublicKeyAlgorithm ImportCspBlob(byte[] bytes)
         {
             Contract.Requires(bytes != null);
 
             throw new NotImplementedException();
         }
 
-        public override void LoadKeyAndCertificatesData(byte[] data)
+        public override PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data)
         {
             Contract.Requires(data != null);
 
             throw new NotImplementedException();
         }
 
-        public override byte[] CreateKeyAndCertificatesData()
+        public override byte[] ExportKeyAndCertificatesData()
         {
             throw new NotImplementedException();
         }

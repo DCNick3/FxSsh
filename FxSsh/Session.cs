@@ -26,8 +26,12 @@ namespace FxSsh
         private static readonly Dictionary<byte, Type> _messagesMetadata;
         internal static readonly Dictionary<string, Func<KexAlgorithm>> _keyExchangeAlgorithms =
             new Dictionary<string, Func<KexAlgorithm>>();
-        internal static readonly Dictionary<string, Func<string, PublicKeyAlgorithm>> _publicKeyAlgorithms =
-            new Dictionary<string, Func<string, PublicKeyAlgorithm>>();
+        
+        internal static readonly
+            Dictionary<string, (Func<byte[], PublicKeyAlgorithm> FromCspBlob, Func<byte[], PublicKeyAlgorithm>
+                FromKeyAndCertificatesData)> _publicKeyAlgorithms =
+                new Dictionary<string, (Func<byte[], PublicKeyAlgorithm>, Func<byte[], PublicKeyAlgorithm>)>();
+        
         internal static readonly Dictionary<string, Func<CipherInfo>> _encryptionAlgorithms =
             new Dictionary<string, Func<CipherInfo>>();
         internal static readonly Dictionary<string, Func<HmacInfo>> _hmacAlgorithms =
@@ -68,9 +72,9 @@ namespace FxSsh
         {
             _keyExchangeAlgorithms.Add("diffie-hellman-group14-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(2048)));
             _keyExchangeAlgorithms.Add("diffie-hellman-group1-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(1024)));
-
-            _publicKeyAlgorithms.Add("ssh-rsa", x => new RsaKey(x));
-            _publicKeyAlgorithms.Add("ssh-dss", x => new DssKey(x));
+    
+            _publicKeyAlgorithms.Add("ssh-rsa", (x => new RsaKey().ImportCspBlob(x), x => new RsaKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-dss", (x => new DssKey().ImportCspBlob(x), x => new DssKey().ImportKeyAndCertificatesData(x)));
 
             _encryptionAlgorithms.Add("aes128-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CTR));
             _encryptionAlgorithms.Add("aes192-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CTR));
@@ -667,7 +671,7 @@ namespace FxSsh
         protected class Algorithms
         {
             public KexAlgorithm KeyExchange;
-            public PublicKeyAlgorithm PublicKey;
+            public PublicKeyAlgorithm ServerIdentification;
             public EncryptionAlgorithm ReceiveEncryption;
             public EncryptionAlgorithm TransmitEncryption;
             public HmacAlgorithm ReceiveHmac;
