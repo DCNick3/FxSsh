@@ -33,8 +33,7 @@ namespace FxSsh
         #region Handle messages
 
         protected void HandleMessage(KeyExchangeDhReplyMessage message)
-        {
-            
+        {   
             var kexAlg = _exchangeContext.NewAlgorithms.KeyExchange;
             var hostKeyAlg = _publicKeyAlgorithms[_exchangeContext.PublicKey].FromKeyAndCertificatesData(message.HostKey);
             var receiveCipher = _encryptionAlgorithms[_exchangeContext.ReceiveEncryption]();
@@ -48,6 +47,11 @@ namespace FxSsh
             var hostKeyAndCerts = message.HostKey;
             var exchangeHash = ComputeExchangeHash(kexAlg, hostKeyAndCerts, clientExchangeValue, serverExchangeValue, sharedSecret);
 
+            if(!hostKeyAlg.VerifyData(exchangeHash, hostKeyAlg.GetSignature(message.Signature)))
+                throw new SshConnectionException("Host key verification failed", DisconnectReason.HostKeyNotVerifiable);
+
+            Console.WriteLine($"Host key is {hostKeyAlg.GetFingerprint("sha256")}");
+            
             if (SessionId == null)
                 SessionId = exchangeHash;
 
@@ -70,7 +74,7 @@ namespace FxSsh
                 ReceiveCompression = _compressionAlgorithms[_exchangeContext.ReceiveCompression](),
                 TransmitCompression = _compressionAlgorithms[_exchangeContext.TransmitCompression](),
             };
-
+            
             SendMessage(new NewKeysMessage());
         }
 

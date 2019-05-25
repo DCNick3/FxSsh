@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 
 namespace FxSsh.Messages
@@ -8,7 +8,7 @@ namespace FxSsh.Messages
     {
         private const byte MessageNumber = 5;
 
-        public string ServiceName { get; private set; }
+        public string ServiceName { get; set; }
 
         public override byte MessageType { get { return MessageNumber; } }
 
