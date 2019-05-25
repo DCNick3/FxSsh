@@ -17,6 +17,8 @@ namespace FxSsh
                     return new RsaKey();
                 case "ssh-dss":
                     return new DssKey();
+                case "ssh-ed25519":
+                    return new Ed25519Key();
                 default:
                     throw new ArgumentOutOfRangeException("type");
             }
@@ -33,7 +35,7 @@ namespace FxSsh
 
         public static string[] SupportedAlgorithms
         {
-            get { return new string[] { "ssh-rsa", "ssh-dss" }; }
+            get { return new string[] { "ssh-rsa", "ssh-dss", "ssh-ed25519" }; }
         }
     }
 }

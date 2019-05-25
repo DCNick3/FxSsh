@@ -13,7 +13,7 @@ namespace FxSsh.Algorithms
             get { return "ssh-rsa"; }
         }
 
-        public override PublicKeyAlgorithm ImportCspBlob(byte[] bytes)
+        public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {
             _algorithm.ImportCspBlob(bytes);
             return this;
@@ -60,19 +60,9 @@ namespace FxSsh.Algorithms
             return _algorithm.VerifyData(data, signature, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
         }
 
-        public override bool VerifyHash(byte[] hash, byte[] signature)
-        {
-            return _algorithm.VerifyHash(hash, signature, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
-        }
-
         public override byte[] SignData(byte[] data)
         {
             return _algorithm.SignData(data, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
-        }
-
-        public override byte[] SignHash(byte[] hash)
-        {
-            return _algorithm.SignHash(hash, HashAlgorithmName.SHA1, RSASignaturePadding.Pkcs1);
         }
     }
 }

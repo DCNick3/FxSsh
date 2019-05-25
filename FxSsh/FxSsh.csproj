@@ -14,4 +14,8 @@
     <AssemblyOriginatorKeyFile>FxSsh.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NSec.Cryptography" Version="19.5.0" />
+  </ItemGroup>
+
 </Project>

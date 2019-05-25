@@ -58,7 +58,7 @@ namespace FxSsh.Algorithms
             }
         }
 
-        public abstract PublicKeyAlgorithm ImportCspBlob(byte[] bytes);
+        public abstract PublicKeyAlgorithm ImportInternalBlob(byte[] bytes);
 
         public abstract PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data);
         
@@ -68,10 +68,6 @@ namespace FxSsh.Algorithms
 
         public abstract bool VerifyData(byte[] data, byte[] signature);
 
-        public abstract bool VerifyHash(byte[] hash, byte[] signature);
-
         public abstract byte[] SignData(byte[] data);
-
-        public abstract byte[] SignHash(byte[] hash);
     }
 }

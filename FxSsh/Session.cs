@@ -1,4 +1,4 @@
-﻿using FxSsh.Algorithms;
+using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
 using System;
@@ -73,8 +73,9 @@ namespace FxSsh
             _keyExchangeAlgorithms.Add("diffie-hellman-group14-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(2048)));
             _keyExchangeAlgorithms.Add("diffie-hellman-group1-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(1024)));
     
-            _publicKeyAlgorithms.Add("ssh-rsa", (x => new RsaKey().ImportCspBlob(x), x => new RsaKey().ImportKeyAndCertificatesData(x)));
-            _publicKeyAlgorithms.Add("ssh-dss", (x => new DssKey().ImportCspBlob(x), x => new DssKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-rsa", (x => new RsaKey().ImportInternalBlob(x), x => new RsaKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-dss", (x => new DssKey().ImportInternalBlob(x), x => new DssKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-ed25519", (x => new Ed25519Key().ImportInternalBlob(x), x => new Ed25519Key().ImportKeyAndCertificatesData(x)));
 
             _encryptionAlgorithms.Add("aes128-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CTR));
             _encryptionAlgorithms.Add("aes192-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CTR));

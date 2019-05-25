@@ -12,7 +12,7 @@ namespace FxSsh.Algorithms
             get { throw new NotImplementedException(); }
         }
 
-        public override PublicKeyAlgorithm ImportCspBlob(byte[] bytes)
+        public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {
             Contract.Requires(bytes != null);
 
@@ -39,24 +39,9 @@ namespace FxSsh.Algorithms
             throw new NotImplementedException();
         }
 
-        public override bool VerifyHash(byte[] hash, byte[] signature)
-        {
-            Contract.Requires(hash != null);
-            Contract.Requires(signature != null);
-
-            throw new NotImplementedException();
-        }
-
         public override byte[] SignData(byte[] data)
         {
             Contract.Requires(data != null);
-
-            throw new NotImplementedException();
-        }
-
-        public override byte[] SignHash(byte[] hash)
-        {
-            Contract.Requires(hash != null);
 
             throw new NotImplementedException();
         }
