@@ -1,4 +1,4 @@
-using FxSsh.Algorithms;
+﻿using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
 using System;
@@ -105,7 +105,7 @@ namespace FxSsh
 
         public event EventHandler<KeyExchangeArgs> KeysExchanged;
 
-        internal void EstablishConnection()
+        public void EstablishConnection()
         {
             if (!_socket.Connected)
             {
@@ -595,8 +595,17 @@ namespace FxSsh
         {
             using (var worker = new SshDataWorker())
             {
-                worker.Write(RemoteVersion, Encoding.ASCII);
-                worker.Write(LocalVersion, Encoding.ASCII);
+                if (Role == SessionRole.Server)
+                {
+                    worker.Write(RemoteVersion, Encoding.ASCII);
+                    worker.Write(LocalVersion, Encoding.ASCII);
+                }
+                else
+                {
+                    worker.Write(LocalVersion, Encoding.ASCII);
+                    worker.Write(RemoteVersion, Encoding.ASCII);
+                }
+
                 worker.WriteBinary(_exchangeContext.ClientKexInitPayload);
                 worker.WriteBinary(_exchangeContext.ServerKexInitPayload);
                 worker.WriteBinary(hostKeyAndCerts);

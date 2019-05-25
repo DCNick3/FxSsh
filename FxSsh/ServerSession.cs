@@ -41,7 +41,8 @@ namespace FxSsh
 
             if (SessionId == null)
                 SessionId = exchangeHash;
-
+            
+            // Maybe use client-to-server and server-to-client notation here too?
             var receiveCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.BlockSize >> 3, sharedSecret, 'A');
             var transmitCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, transmitCipher.BlockSize >> 3, sharedSecret, 'B');
             var receiveCipherKey = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.KeySize >> 3, sharedSecret, 'C');

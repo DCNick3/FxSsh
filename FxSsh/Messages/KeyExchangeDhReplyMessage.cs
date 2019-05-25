@@ -12,8 +12,15 @@ namespace FxSsh.Messages
         public byte[] Signature { get; set; }
 
         public override byte MessageType { get { return MessageNumber; } }
+        
+        protected override void LoadPacketInternal(SshDataWorker reader)
+        {
+            HostKey = reader.ReadBinary();
+            F = reader.ReadMpint();
+            Signature = reader.ReadBinary();
+        }
 
-        protected override void OnGetPacket(SshDataWorker writer)
+        protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.WriteBinary(HostKey);
             writer.WriteMpint(F);

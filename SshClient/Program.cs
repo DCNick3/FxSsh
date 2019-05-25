@@ -11,7 +11,9 @@ namespace FxSsh
             Socket s = new Socket(SocketType.Stream, ProtocolType.Tcp);
             s.Connect("localhost", 2222);
             
-            ClientSession session = new ClientSession(s);
+            ClientSession session = new ClientSession(s, "SSH-2.0-magic");
+
+            session.EstablishConnection();
         }
     }
 }

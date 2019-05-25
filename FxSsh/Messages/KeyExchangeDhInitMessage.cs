@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace FxSsh.Messages
 {
@@ -14,6 +14,11 @@ namespace FxSsh.Messages
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
             E = reader.ReadMpint();
+        }
+
+        protected override void SerializePacketInternal(SshDataWorker writer)
+        {
+            writer.WriteMpint(E);
         }
     }
 }

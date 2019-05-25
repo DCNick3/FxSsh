@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using FxSsh.Algorithms;
@@ -50,12 +51,13 @@ namespace FxSsh
             if (SessionId == null)
                 SessionId = exchangeHash;
 
-            var receiveCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.BlockSize >> 3, sharedSecret, 'A');
-            var transmitCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, transmitCipher.BlockSize >> 3, sharedSecret, 'B');
-            var receiveCipherKey = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.KeySize >> 3, sharedSecret, 'C');
-            var transmitCipherKey = ComputeEncryptionKey(kexAlg, exchangeHash, transmitCipher.KeySize >> 3, sharedSecret, 'D');
-            var receiveHmacKey = ComputeEncryptionKey(kexAlg, exchangeHash, receiveHmac.KeySize >> 3, sharedSecret, 'E');
-            var transmitHmacKey = ComputeEncryptionKey(kexAlg, exchangeHash, transmitHmac.KeySize >> 3, sharedSecret, 'F');
+            // Maybe use client-to-server and server-to-client notation here too?
+            var transmitCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, transmitCipher.BlockSize >> 3, sharedSecret, 'A');
+            var receiveCipherIV = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.BlockSize >> 3, sharedSecret, 'B');
+            var transmitCipherKey = ComputeEncryptionKey(kexAlg, exchangeHash, transmitCipher.KeySize >> 3, sharedSecret, 'C');
+            var receiveCipherKey = ComputeEncryptionKey(kexAlg, exchangeHash, receiveCipher.KeySize >> 3, sharedSecret, 'D');
+            var transmitHmacKey = ComputeEncryptionKey(kexAlg, exchangeHash, transmitHmac.KeySize >> 3, sharedSecret, 'E');
+            var receiveHmacKey = ComputeEncryptionKey(kexAlg, exchangeHash, receiveHmac.KeySize >> 3, sharedSecret, 'F');
 
             _exchangeContext.NewAlgorithms = new Algorithms
             {
