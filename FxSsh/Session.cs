@@ -1,4 +1,4 @@
-using FxSsh.Algorithms;
+﻿using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
 using System;
@@ -104,9 +104,12 @@ namespace FxSsh
 
             _socket = socket;
             LocalVersion = programVersion;
+            
         }
 
         public event EventHandler<EventArgs> Disconnected;
+
+        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange; 
 
         public event EventHandler<KeyExchangeArgs> KeysExchanged;
 
@@ -475,24 +478,40 @@ namespace FxSsh
             }
         }
 
-        private Message LoadKexInitMessage()
+        protected virtual KeyExchangeInitMessage LoadKexInitMessage()
         {
             var message = new KeyExchangeInitMessage();
-            message.KeyExchangeAlgorithms = _keyExchangeAlgorithms.Keys.ToArray();
-            message.ServerHostKeyAlgorithms = _publicKeyAlgorithms.Keys.ToArray();
+            PreKeyExchangeArgs preExchangeEventArgs = new PreKeyExchangeArgs()
+            {
+                ServerHostKeyAlgorithms = _publicKeyAlgorithms.Keys.ToArray(),
+                KeyExchangeAlgorithms = _keyExchangeAlgorithms.Keys.ToArray(),
+
+                EncryptionAlgorithmsClientToServer = _encryptionAlgorithms.Keys.ToArray(),
+                EncryptionAlgorithmsServerToClient = _encryptionAlgorithms.Keys.ToArray(),
+                MacAlgorithmsClientToServer = _hmacAlgorithms.Keys.ToArray(),
+                MacAlgorithmsServerToClient = _hmacAlgorithms.Keys.ToArray(),
+                CompressionAlgorithmsClientToServer = _compressionAlgorithms.Keys.ToArray(),
+                CompressionAlgorithmsServerToClient = _compressionAlgorithms.Keys.ToArray(),
+            };
+            // To allow user to ban weak algorithms
+            PreKeyExchange?.Invoke(this, preExchangeEventArgs);
             
-            message.EncryptionAlgorithmsClientToServer = _encryptionAlgorithms.Keys.ToArray();
-            message.EncryptionAlgorithmsServerToClient = _encryptionAlgorithms.Keys.ToArray();
-            message.MacAlgorithmsClientToServer = _hmacAlgorithms.Keys.ToArray();
-            message.MacAlgorithmsServerToClient = _hmacAlgorithms.Keys.ToArray();
-            message.CompressionAlgorithmsClientToServer = _compressionAlgorithms.Keys.ToArray();
-            message.CompressionAlgorithmsServerToClient = _compressionAlgorithms.Keys.ToArray();
+            message.KeyExchangeAlgorithms = preExchangeEventArgs.KeyExchangeAlgorithms;
+            message.ServerHostKeyAlgorithms = preExchangeEventArgs.ServerHostKeyAlgorithms;
+            
+            message.EncryptionAlgorithmsClientToServer = preExchangeEventArgs.EncryptionAlgorithmsClientToServer;
+            message.EncryptionAlgorithmsServerToClient = preExchangeEventArgs.EncryptionAlgorithmsServerToClient;
+            message.MacAlgorithmsClientToServer = preExchangeEventArgs.MacAlgorithmsClientToServer;
+            message.MacAlgorithmsServerToClient = preExchangeEventArgs.MacAlgorithmsServerToClient;
+            message.CompressionAlgorithmsServerToClient = preExchangeEventArgs.CompressionAlgorithmsServerToClient;
+            message.CompressionAlgorithmsClientToServer = preExchangeEventArgs.CompressionAlgorithmsClientToServer;
             
             message.LanguagesClientToServer = new[] { "" };
             message.LanguagesServerToClient = new[] { "" };
             message.FirstKexPacketFollows = false;
             message.Reserved = 0;
 
+            
             return message;
         }
         #endregion
@@ -527,16 +546,18 @@ namespace FxSsh
                 ServerHostKeyAlgorithms = message.ServerHostKeyAlgorithms
             });
 
-            _exchangeContext.KeyExchange = ChooseAlgorithm(_keyExchangeAlgorithms.Keys.ToArray(), message.KeyExchangeAlgorithms);
-            _exchangeContext.PublicKey = ChooseAlgorithm(_publicKeyAlgorithms.Keys.ToArray(), message.ServerHostKeyAlgorithms);
+            var ourMessage = LoadKexInitMessage();
+            
+            _exchangeContext.KeyExchange = ChooseAlgorithm(ourMessage.KeyExchangeAlgorithms, message.KeyExchangeAlgorithms);
+            _exchangeContext.PublicKey = ChooseAlgorithm(ourMessage.ServerHostKeyAlgorithms, message.ServerHostKeyAlgorithms);
             
             
-            var clientToServerEncryption = ChooseAlgorithm(_encryptionAlgorithms.Keys.ToArray(), message.EncryptionAlgorithmsClientToServer);
-            var serverToClientEncryption = ChooseAlgorithm(_encryptionAlgorithms.Keys.ToArray(), message.EncryptionAlgorithmsServerToClient);
-            var clientToServerHmac = ChooseAlgorithm(_hmacAlgorithms.Keys.ToArray(), message.MacAlgorithmsClientToServer);
-            var serverToClientHmac = ChooseAlgorithm(_hmacAlgorithms.Keys.ToArray(), message.MacAlgorithmsServerToClient);
-            var clientToServerCompression = ChooseAlgorithm(_compressionAlgorithms.Keys.ToArray(), message.CompressionAlgorithmsClientToServer);
-            var serverToClientCompression = ChooseAlgorithm(_compressionAlgorithms.Keys.ToArray(), message.CompressionAlgorithmsServerToClient);
+            var clientToServerEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsClientToServer, message.EncryptionAlgorithmsClientToServer);
+            var serverToClientEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsServerToClient, message.EncryptionAlgorithmsServerToClient);
+            var clientToServerHmac = ChooseAlgorithm(ourMessage.MacAlgorithmsClientToServer, message.MacAlgorithmsClientToServer);
+            var serverToClientHmac = ChooseAlgorithm(ourMessage.MacAlgorithmsServerToClient, message.MacAlgorithmsServerToClient);
+            var clientToServerCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsClientToServer, message.CompressionAlgorithmsClientToServer);
+            var serverToClientCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsServerToClient, message.CompressionAlgorithmsServerToClient);
 
             if (Role == SessionRole.Server)
             {
@@ -589,8 +610,20 @@ namespace FxSsh
 
         protected abstract void DoExchange();
 
-        private string ChooseAlgorithm(string[] serverAlgorithms, string[] clientAlgorithms)
+        private string ChooseAlgorithm(string[] localAlgorithms, string[] remoteAlgorithms)
         {
+
+            string[] serverAlgorithms, clientAlgorithms;
+            if (Role == SessionRole.Server)
+            {
+                serverAlgorithms = localAlgorithms;
+                clientAlgorithms = remoteAlgorithms;
+            }
+            else
+            {
+                clientAlgorithms = localAlgorithms;
+                serverAlgorithms = remoteAlgorithms;
+            }
             foreach (var client in clientAlgorithms)
                 foreach (var server in serverAlgorithms)
                     if (client == server)

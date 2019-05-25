@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using FxSsh.Services;
 
 namespace FxSsh
 {
@@ -33,6 +34,7 @@ namespace FxSsh
 
         public event EventHandler<ServerSession> ConnectionAccepted;
         public event EventHandler<Exception> ExceptionRasied;
+        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange; 
 
         public void Start()
         {
@@ -129,6 +131,7 @@ namespace FxSsh
                     };
                     lock (_lock)
                         _sessions.Add(session);
+                    session.PreKeyExchange += (s, e) => PreKeyExchange?.Invoke(s, e);
                     try
                     {
                         ConnectionAccepted?.Invoke(this, session);

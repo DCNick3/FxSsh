@@ -21,7 +21,14 @@ namespace FxSsh
         public event EventHandler<SshService> ServiceRegistered;
 
         public override SessionRole Role => SessionRole.Server;
-        
+
+        protected override KeyExchangeInitMessage LoadKexInitMessage()
+        {
+            var m = base.LoadKexInitMessage();
+            m.ServerHostKeyAlgorithms = m.ServerHostKeyAlgorithms.Where(_ => _hostKey.ContainsKey(_)).ToArray();
+            return m;
+        }
+
         #region Handle messages
         
         protected void HandleMessage(KeyExchangeDhInitMessage message)
