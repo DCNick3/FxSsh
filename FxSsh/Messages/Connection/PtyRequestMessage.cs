@@ -11,9 +11,9 @@ namespace FxSsh.Messages.Connection
         public uint heightPx = 0;
         public string modes = "";
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             Terminal = reader.ReadString(Encoding.ASCII);
             widthChars = reader.ReadUInt32();

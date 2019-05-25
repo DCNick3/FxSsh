@@ -1,4 +1,4 @@
-﻿using FxSsh.Algorithms;
+using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
 using System;
@@ -338,7 +338,7 @@ namespace FxSsh
                 : new UnimplementedMessage { SequenceNumber = _inboundPacketSequence, UnimplementedMessageType = typeNumber };
 
             if (implemented)
-                message.Load(data);
+                message.LoadPacket(data);
 
             lock (_locker)
             {
@@ -372,7 +372,7 @@ namespace FxSsh
             var useAlg = _algorithms != null;
 
             var blockSize = (byte)(useAlg ? Math.Max(8, _algorithms.TransmitEncryption.BlockBytesSize) : 8);
-            var payload = message.GetPacket();
+            var payload = message.SerializePacket();
             if (useAlg)
                 payload = _algorithms.TransmitCompression.Compress(payload);
 
@@ -432,9 +432,9 @@ namespace FxSsh
             {
                 var kexInitMessage = LoadKexInitMessage();
                 if (Role == SessionRole.Server)
-                    _exchangeContext.ServerKexInitPayload = kexInitMessage.GetPacket();
+                    _exchangeContext.ServerKexInitPayload = kexInitMessage.SerializePacket();
                 else
-                    _exchangeContext.ClientKexInitPayload = kexInitMessage.GetPacket();
+                    _exchangeContext.ClientKexInitPayload = kexInitMessage.SerializePacket();
 
                 SendMessage(kexInitMessage);
             }
@@ -550,9 +550,9 @@ namespace FxSsh
             }
             
             if (Role == SessionRole.Server)
-                _exchangeContext.ClientKexInitPayload = message.GetPacket();
+                _exchangeContext.ClientKexInitPayload = message.SerializePacket();
             else
-                _exchangeContext.ServerKexInitPayload = message.GetPacket();
+                _exchangeContext.ServerKexInitPayload = message.SerializePacket();
 
             DoExchange();
         }

@@ -7,9 +7,9 @@ namespace FxSsh.Messages
     {
         public string Name { get; private set; }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             Name = reader.ReadString(Encoding.ASCII);
         }

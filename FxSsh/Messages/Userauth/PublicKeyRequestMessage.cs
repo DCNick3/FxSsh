@@ -13,9 +13,9 @@ namespace FxSsh.Messages.Userauth
 
         public byte[] PayloadWithoutSignature { get; private set; }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             if (MethodName != "publickey")
                 throw new ArgumentException(string.Format("Method name {0} is not valid.", MethodName));

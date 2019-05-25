@@ -13,7 +13,7 @@ namespace FxSsh.Messages.Userauth
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnGetPacket(SshDataWorker writer)
+        protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(KeyAlgorithmName, Encoding.ASCII);
             writer.WriteBinary(PublicKey);

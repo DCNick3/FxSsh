@@ -15,7 +15,7 @@ namespace FxSsh.Messages.Connection
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
             ChannelType = reader.ReadString(Encoding.ASCII);
             SenderChannel = reader.ReadUInt32();

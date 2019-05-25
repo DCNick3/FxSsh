@@ -14,7 +14,7 @@ namespace FxSsh.Messages.Userauth
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
             Username = reader.ReadString(Encoding.UTF8);
             ServiceName = reader.ReadString(Encoding.ASCII);

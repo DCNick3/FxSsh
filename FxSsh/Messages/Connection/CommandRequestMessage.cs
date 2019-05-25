@@ -6,9 +6,9 @@ namespace FxSsh.Messages.Connection
     {
         public string Command { get; private set; }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             Command = reader.ReadString(Encoding.ASCII);
         }

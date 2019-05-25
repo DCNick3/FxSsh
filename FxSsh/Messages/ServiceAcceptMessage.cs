@@ -17,7 +17,7 @@ namespace FxSsh.Messages
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnGetPacket(SshDataWorker writer)
+        protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(ServiceName, Encoding.ASCII);
         }

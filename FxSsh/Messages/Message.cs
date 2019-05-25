@@ -9,7 +9,7 @@ namespace FxSsh.Messages
 
         protected byte[] RawBytes { get; set; }
 
-        public void Load(byte[] bytes)
+        public void LoadPacket(byte[] bytes)
         {
             Contract.Requires(bytes != null);
 
@@ -20,17 +20,17 @@ namespace FxSsh.Messages
                 if (number != MessageType)
                     throw new ArgumentException(string.Format("Message type {0} is not valid.", number));
 
-                OnLoad(worker);
+                LoadPacketInternal(worker);
             }
         }
 
-        public byte[] GetPacket()
+        public byte[] SerializePacket()
         {
             using (var worker = new SshDataWorker())
             {
                 worker.Write(MessageType);
 
-                OnGetPacket(worker);
+                SerializePacketInternal(worker);
 
                 return worker.ToByteArray();
             }
@@ -41,18 +41,18 @@ namespace FxSsh.Messages
             Contract.Requires(message != null);
 
             var msg = new T();
-            msg.Load(message.RawBytes);
+            msg.LoadPacket(message.RawBytes);
             return msg;
         }
 
-        protected virtual void OnLoad(SshDataWorker reader)
+        protected virtual void LoadPacketInternal(SshDataWorker reader)
         {
             Contract.Requires(reader != null);
 
             throw new NotSupportedException();
         }
 
-        protected virtual void OnGetPacket(SshDataWorker writer)
+        protected virtual void SerializePacketInternal(SshDataWorker writer)
         {
             Contract.Requires(writer != null);
 

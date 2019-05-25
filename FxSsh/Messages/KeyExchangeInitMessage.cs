@@ -45,7 +45,7 @@ namespace FxSsh.Messages
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
             Cookie = reader.ReadBinary(16);
             KeyExchangeAlgorithms = reader.ReadString(Encoding.ASCII).Split(',');
@@ -62,7 +62,7 @@ namespace FxSsh.Messages
             Reserved = reader.ReadUInt32();
         }
 
-        protected override void OnGetPacket(SshDataWorker writer)
+        protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(Cookie);
             writer.Write(string.Join(",", KeyExchangeAlgorithms), Encoding.ASCII);

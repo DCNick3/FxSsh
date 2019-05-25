@@ -11,9 +11,9 @@ namespace FxSsh.Messages.Connection
         public string OriginatorIPAddress { get; private set; }
         public uint OriginatorPort { get; private set; }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             if (ChannelType != "forwarded-tcpip")
                 throw new ArgumentException(string.Format("Channel type {0} is not valid.", ChannelType));

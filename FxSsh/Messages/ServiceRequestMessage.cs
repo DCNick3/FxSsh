@@ -12,7 +12,7 @@ namespace FxSsh.Messages
 
         public override byte MessageType { get { return MessageNumber; } }
 
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
             ServiceName = reader.ReadString(Encoding.ASCII);
         }

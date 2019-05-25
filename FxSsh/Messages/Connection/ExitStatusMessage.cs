@@ -5,12 +5,12 @@ namespace FxSsh.Messages.Connection
     {
         public uint ExitStatus { get; set; }
 
-        protected override void OnGetPacket(SshDataWorker writer)
+        protected override void SerializePacketInternal(SshDataWorker writer)
         {
             RequestType = "exit-status";
             WantReply = false;
 
-            base.OnGetPacket(writer);
+            base.SerializePacketInternal(writer);
 
             writer.Write(ExitStatus);
         }

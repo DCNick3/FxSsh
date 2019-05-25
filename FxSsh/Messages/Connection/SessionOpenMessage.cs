@@ -4,9 +4,9 @@ namespace FxSsh.Messages.Connection
 {
     public class SessionOpenMessage : ChannelOpenMessage
     {
-        protected override void OnLoad(SshDataWorker reader)
+        protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            base.OnLoad(reader);
+            base.LoadPacketInternal(reader);
 
             if (ChannelType != "session")
                 throw new ArgumentException(string.Format("Channel type {0} is not valid.", ChannelType));
