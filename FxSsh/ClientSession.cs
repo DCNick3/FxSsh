@@ -76,6 +76,10 @@ namespace FxSsh
             };
             
             SendMessage(new NewKeysMessage());
+            SendMessage(new ServiceRequestMessage
+            {
+                ServiceName = "ssh-connection"
+            });
         }
 
         #endregion

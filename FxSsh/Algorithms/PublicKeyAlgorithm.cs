@@ -17,9 +17,15 @@ namespace FxSsh.Algorithms
             {
                 Debug.Assert(hash != null, "Invalid hash algorithm");
                 var bytes = hash.ComputeHash(ExportKeyAndCertificatesData());
-                if (algo == "md5")
-                    return BitConverter.ToString(bytes).Replace('-', ':');
-                return Convert.ToBase64String(bytes);
+                switch (algo)
+                {
+                    case "md5":
+                        return BitConverter.ToString(bytes).Replace('-', ':');
+                    case "sha256":
+                        return Convert.ToBase64String(bytes).Replace("=", "");
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(algo), algo, "must be md5 or sha256");
+                }
             }
         }
 
