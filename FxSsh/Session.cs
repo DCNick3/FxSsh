@@ -81,9 +81,9 @@ namespace FxSsh
             _encryptionAlgorithms.Add("aes192-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CTR));
             _encryptionAlgorithms.Add("aes256-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CTR));
             _encryptionAlgorithms.Add("aes128-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CBC));
-            _encryptionAlgorithms.Add("3des-cbc", () => new CipherInfo(new TripleDESCryptoServiceProvider(), 192, CipherModeEx.CBC));
             _encryptionAlgorithms.Add("aes192-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CBC));
             _encryptionAlgorithms.Add("aes256-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CBC));
+            _encryptionAlgorithms.Add("3des-cbc", () => new CipherInfo(new TripleDESCryptoServiceProvider(), 192, CipherModeEx.CBC));
 
             _hmacAlgorithms.Add("hmac-md5", () => new HmacInfo(new HMACMD5(), 128));
             _hmacAlgorithms.Add("hmac-sha1", () => new HmacInfo(new HMACSHA1(), 160));
