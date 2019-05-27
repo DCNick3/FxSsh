@@ -6,7 +6,7 @@ namespace FxSsh.Messages.Connection
     [Message("SSH_MSG_CHANNEL_OPEN", MessageNumber)]
     public class ChannelOpenMessage : ConnectionServiceMessage
     {
-        private const byte MessageNumber = 90;
+        public const byte MessageNumber = 90;
 
         public string ChannelType { get; private set; }
         public uint SenderChannel { get; private set; }

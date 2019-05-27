@@ -6,7 +6,7 @@ namespace FxSsh.Messages.Userauth
     [Message("SSH_MSG_USERAUTH_FAILURE", MessageNumber)]
     public class FailureMessage : UserauthServiceMessage
     {
-        private const byte MessageNumber = 51;
+        public const byte MessageNumber = 51;
 
         public override byte MessageType { get { return MessageNumber; } }
 

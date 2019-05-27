@@ -6,7 +6,7 @@ namespace FxSsh.Messages.Userauth
     [Message("SSH_MSG_USERAUTH_PK_OK", MessageNumber)]
     public class PublicKeyOkMessage : UserauthServiceMessage
     {
-        private const byte MessageNumber = 60;
+        public const byte MessageNumber = 60;
 
         public string KeyAlgorithmName { get; set; }
         public byte[] PublicKey { get; set; }

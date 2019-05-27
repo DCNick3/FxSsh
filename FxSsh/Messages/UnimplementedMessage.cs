@@ -3,7 +3,7 @@
     [Message("SSH_MSG_UNIMPLEMENTED", MessageNumber)]
     public class UnimplementedMessage : Message
     {
-        private const byte MessageNumber = 3;
+        public const byte MessageNumber = 3;
         
         public uint SequenceNumber { get; set; }
         

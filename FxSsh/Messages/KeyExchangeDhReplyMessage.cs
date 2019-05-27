@@ -5,7 +5,7 @@ namespace FxSsh.Messages
     [Message("SSH_MSG_KEXDH_REPLY", MessageNumber)]
     public class KeyExchangeDhReplyMessage : Message
     {
-        private const byte MessageNumber = 31;
+        public const byte MessageNumber = 31;
 
         public byte[] HostKey { get; set; }
         public byte[] F { get; set; }
