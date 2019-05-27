@@ -7,6 +7,8 @@ namespace FxSsh.Services
 {
     public class UserauthService : SshService, IDynamicInvoker
     {
+        // This should be generalized to allow multistage auth too
+        private readonly string[] _allowedMethods = {"publickey", "password"};
         public UserauthService(ServerSession session)
             : base(session)
         {
@@ -42,7 +44,11 @@ namespace FxSsh.Services
                 case "hostbased":
                 case "none":
                 default:
-                    _session.SendMessage(new FailureMessage());
+                    _session.SendMessage(new FailureMessage
+                    {
+                        AuthorizationMethodsThatCanContinue = _allowedMethods,
+                        PartialSuccess = false
+                    });
                     break;
             }
         }
@@ -66,7 +72,11 @@ namespace FxSsh.Services
             }
             else
             {
-                _session.SendMessage(new FailureMessage());
+                _session.SendMessage(new FailureMessage
+                {
+                    AuthorizationMethodsThatCanContinue = _allowedMethods,
+                    PartialSuccess = false
+                });
             }
         }
 
@@ -113,7 +123,11 @@ namespace FxSsh.Services
                 }
             }
             
-            _session.SendMessage(new FailureMessage());
+            _session.SendMessage(new FailureMessage
+            {
+                AuthorizationMethodsThatCanContinue = _allowedMethods,
+                PartialSuccess = false
+            });
         }
     }
 }

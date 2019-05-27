@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 
 namespace FxSsh.Messages.Userauth
 {
@@ -8,17 +7,24 @@ namespace FxSsh.Messages.Userauth
     {
         private const byte MessageNumber = 50;
 
-        public string Username { get; protected set; }
-        public string ServiceName { get; protected set; }
-        public string MethodName { get; protected set; }
+        public string Username { get; set; }
+        public string ServiceName { get; set; }
+        public string MethodName { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
             Username = reader.ReadString(Encoding.UTF8);
             ServiceName = reader.ReadString(Encoding.ASCII);
             MethodName = reader.ReadString(Encoding.ASCII);
+        }
+
+        protected override void SerializePacketInternal(SshDataWorker writer)
+        {
+            writer.Write(Username, Encoding.UTF8);
+            writer.Write(ServiceName, Encoding.ASCII);
+            writer.Write(MethodName, Encoding.ASCII);
         }
     }
 }

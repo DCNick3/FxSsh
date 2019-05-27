@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 
 namespace FxSsh.Messages.Userauth
 {
@@ -11,7 +10,13 @@ namespace FxSsh.Messages.Userauth
         public string KeyAlgorithmName { get; set; }
         public byte[] PublicKey { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
+
+        protected override void LoadPacketInternal(SshDataWorker reader)
+        {
+            KeyAlgorithmName = reader.ReadString(Encoding.ASCII);
+            PublicKey = reader.ReadBinary();
+        }
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {

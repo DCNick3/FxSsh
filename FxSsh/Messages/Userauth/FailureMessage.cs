@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace FxSsh.Messages.Userauth
@@ -8,12 +8,21 @@ namespace FxSsh.Messages.Userauth
     {
         public const byte MessageNumber = 51;
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
+
+        public IReadOnlyList<string> AuthorizationMethodsThatCanContinue { get; set; }
+        public bool PartialSuccess { get; set; }
+        
+        protected override void LoadPacketInternal(SshDataWorker reader)
+        {
+            AuthorizationMethodsThatCanContinue = reader.ReadString(Encoding.ASCII).Split(',');
+            PartialSuccess = reader.ReadBoolean();
+        }
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
-            writer.Write("password,publickey", Encoding.ASCII);
-            writer.Write(false);
+            writer.Write(string.Join(",", AuthorizationMethodsThatCanContinue), Encoding.ASCII);
+            writer.Write(PartialSuccess);
         }
     }
 }

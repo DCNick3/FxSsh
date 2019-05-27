@@ -6,10 +6,15 @@ namespace FxSsh.Messages.Userauth
 {
     public class PublicKeyRequestMessage : RequestMessage
     {
-        public bool HasSignature { get; private set; }
-        public string KeyAlgorithmName { get; private set; }
-        public byte[] PublicKey { get; private set; }
-        public byte[] Signature { get; private set; }
+        public PublicKeyRequestMessage()
+        {
+            MethodName = "publickey";
+        }
+        
+        public bool HasSignature { get; set; }
+        public string KeyAlgorithmName { get; set; }
+        public byte[] PublicKey { get; set; }
+        public byte[] Signature { get; set; }
 
         public byte[] PayloadWithoutSignature { get; private set; }
 
@@ -18,7 +23,7 @@ namespace FxSsh.Messages.Userauth
             base.LoadPacketInternal(reader);
 
             if (MethodName != "publickey")
-                throw new ArgumentException(string.Format("Method name {0} is not valid.", MethodName));
+                throw new ArgumentException($"Method name {MethodName} is not valid.");
 
             HasSignature = reader.ReadBoolean();
             KeyAlgorithmName = reader.ReadString(Encoding.ASCII);
@@ -29,6 +34,18 @@ namespace FxSsh.Messages.Userauth
                 Signature = reader.ReadBinary();
                 PayloadWithoutSignature = RawBytes.Take(RawBytes.Length - Signature.Length - 5).ToArray();
             }
+        }
+
+        protected override void SerializePacketInternal(SshDataWorker writer)
+        {
+            base.SerializePacketInternal(writer);
+            
+            writer.Write(HasSignature);
+            writer.Write(KeyAlgorithmName, Encoding.ASCII);
+            writer.WriteBinary(PublicKey);
+
+            if (HasSignature)
+                writer.WriteBinary(Signature);
         }
     }
 }
