@@ -49,23 +49,20 @@ namespace FxSsh.Services
 
         private void HandleMessage(PasswordRequestMessage message)
         {
-            var verifed = false;
+            var verified = false;
 
             var args = new UserauthArgs(_session, message.Username, message.Password);
-            if (Userauth != null)
-            {
-                Userauth(this, args);
-                verifed = args.Result;
-            }
+            
+            Userauth?.Invoke(this, args);
+            verified = args.Result;
 
-            if (verifed)
+            if (verified)
             {
                 _session.RegisterService(message.ServiceName, args);
 
                 Succeed?.Invoke(this, message.ServiceName);
 
                 _session.SendMessage(new SuccessMessage());
-                return;
             }
             else
             {
@@ -77,40 +74,46 @@ namespace FxSsh.Services
         {
             if (Session._publicKeyAlgorithms.ContainsKey(message.KeyAlgorithmName))
             {
-                var verifed = false;
+                var verified = false;
 
-                var keyAlg = Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);
+                var keyAlg = Session._publicKeyAlgorithms[message.KeyAlgorithmName]
+                    .FromKeyAndCertificatesData(message.PublicKey);
 
-                var args = new UserauthArgs(base._session, message.Username, message.KeyAlgorithmName, keyAlg.GetFingerprint(), message.PublicKey);
+                var args = new UserauthArgs(base._session, message.Username, message.KeyAlgorithmName,
+                    keyAlg.GetFingerprint(), message.PublicKey);
                 Userauth?.Invoke(this, args);
-                verifed = args.Result;
+                verified = args.Result;
 
-                if (!verifed)
+                if (verified)
                 {
-                    _session.SendMessage(new FailureMessage());
-                    return;
+
+                    if (!message.HasSignature)
+                    {
+                        _session.SendMessage(new PublicKeyOkMessage
+                            {KeyAlgorithmName = message.KeyAlgorithmName, PublicKey = message.PublicKey});
+                        return;
+                    }
+
+                    var sig = keyAlg.GetSignature(message.Signature);
+
+                    using (var worker = new SshDataWorker())
+                    {
+                        worker.WriteBinary(_session.SessionId);
+                        worker.Write(message.PayloadWithoutSignature);
+
+                        verified = keyAlg.VerifyData(worker.ToByteArray(), sig);
+                    }
+
+                    if (verified)
+                    {
+                        _session.RegisterService(message.ServiceName, args);
+                        Succeed?.Invoke(this, message.ServiceName);
+                        _session.SendMessage(new SuccessMessage());
+                    }
                 }
-
-                if (!message.HasSignature)
-                {
-                    _session.SendMessage(new PublicKeyOkMessage { KeyAlgorithmName = message.KeyAlgorithmName, PublicKey = message.PublicKey });
-                    return;
-                }
-
-                var sig = keyAlg.GetSignature(message.Signature);
-
-                using (var worker = new SshDataWorker())
-                {
-                    worker.WriteBinary(_session.SessionId);
-                    worker.Write(message.PayloadWithoutSignature);
-
-                    verifed = keyAlg.VerifyData(worker.ToByteArray(), sig);
-                }
-
-                _session.RegisterService(message.ServiceName, args);
-                Succeed?.Invoke(this, message.ServiceName);
-                _session.SendMessage(new SuccessMessage());
             }
+            
+            _session.SendMessage(new FailureMessage());
         }
     }
 }
