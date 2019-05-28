@@ -58,5 +58,45 @@ namespace FxSsh.Messages
 
             throw new NotSupportedException();
         }
+
+        public static Group GetGroup(byte number)
+        {
+            switch (number)
+            {
+                case var n when n >= 1 && n <= 19:
+                    return Group.TransportLayerGeneric;
+                case var n when n >= 20 && n <= 29:
+                    return Group.AlgorithmNegotiations;
+                case var n when n >= 30 && n <= 49:
+                    return Group.KeyExchangeMethodSpecific;
+                case var n when n >= 50 && n <= 59:
+                    return Group.UserauthGeneric;
+                case var n when n >= 60 && n <= 79:
+                    return Group.UserauthMethodSpecific;
+                case var n when n >= 80 && n <= 89:
+                    return Group.ConnectionProtocolGeneric;
+                case var n when n >= 90 && n <= 127:
+                    return Group.ChannelRelated;
+                case var n when n >= 128 && n <= 191:
+                    return Group.Reserved;
+                case var n when n >= 192 && n <= 255:
+                    return Group.LocalExtensions;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(number));
+            }
+        }
+        
+        public enum Group
+        {
+            TransportLayerGeneric,
+            AlgorithmNegotiations,
+            KeyExchangeMethodSpecific,
+            UserauthGeneric,
+            UserauthMethodSpecific,
+            ConnectionProtocolGeneric,
+            ChannelRelated,
+            Reserved,
+            LocalExtensions,
+        }
     }
 }

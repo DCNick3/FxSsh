@@ -7,6 +7,8 @@ namespace FxSsh.Services
 {
     public class UserauthService : SshService, IDynamicInvoker
     {
+        private string _currentAuthMethod;
+        
         // This should be generalized to allow multistage auth too
         private readonly string[] _allowedMethods = {"publickey", "password"};
         public UserauthService(ServerSession session)
@@ -29,8 +31,26 @@ namespace FxSsh.Services
             this.InvokeHandleMessage(message);
         }
 
+        public Message CreateMethodSpecificMessage(byte number)
+        {
+            switch (_currentAuthMethod)
+            {
+                case "publickey":
+                    if (number == PublicKeyOkMessage.MessageNumber)
+                        return new PublicKeyOkMessage();
+                    break;
+                case "password":
+                    if (number == PasswordChangeRequestMessage.MessageNumber)
+                        return new PasswordChangeRequestMessage();
+                    break;
+            }
+            
+            return new UnknownMessage();
+        }
+
         private void HandleMessage(RequestMessage message)
         {
+            _currentAuthMethod = message.MethodName;
             switch (message.MethodName)
             {
                 case "publickey":

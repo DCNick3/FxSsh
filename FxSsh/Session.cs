@@ -343,14 +343,28 @@ namespace FxSsh
             }
 
             var typeNumber = data[0];
-            var implemented = _messagesMetadata.ContainsKey(typeNumber);
-            var message = implemented
-                ? (Message)Activator.CreateInstance(_messagesMetadata[typeNumber])
-                : new UnknownMessage { SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber };
+            var group = Message.GetGroup(typeNumber);
+            Message message;
 
-            if (implemented)
+            if (group == Message.Group.UserauthMethodSpecific)
+            {
+                var userauthService = GetService<UserauthService>();
+                if (userauthService == null)
+                    throw new SshConnectionException("Userauth method-specific message received, but " +
+                                                     "userauth service is not registered", DisconnectReason.ProtocolError);
+                message = userauthService.CreateMethodSpecificMessage(typeNumber);
+            }
+            else
+            {
+                var implemented = _messagesMetadata.ContainsKey(typeNumber);
+                message = implemented
+                    ? (Message)Activator.CreateInstance(_messagesMetadata[typeNumber])
+                    : new UnknownMessage { SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber };
+            }   
+
+            if (!(message is UnknownMessage))
                 message.LoadPacket(data);
-
+            
             lock (_locker)
             {
                 _inboundPacketSequence++;
