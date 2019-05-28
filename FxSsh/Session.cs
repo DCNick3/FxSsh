@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -330,7 +330,7 @@ namespace FxSsh
                 followingBlocks = _algorithms.ReceiveEncryption.Transform(followingBlocks);
 
             var fullPacket = firstBlock.Concat(followingBlocks).ToArray();
-            var data = fullPacket.Skip(5).Take(packetLength - paddingLength).ToArray();
+            var data = fullPacket.Skip(5).Take(packetLength - paddingLength - 1).ToArray();
             if (useAlg)
             {
                 var clientMac = SocketRead(_algorithms.ReceiveHmac.DigestLength);

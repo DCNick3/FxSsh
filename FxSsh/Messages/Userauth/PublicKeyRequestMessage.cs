@@ -32,7 +32,7 @@ namespace FxSsh.Messages.Userauth
             if (HasSignature)
             {
                 Signature = reader.ReadBinary();
-                PayloadWithoutSignature = RawBytes.Take(RawBytes.Length - Signature.Length - 5).ToArray();
+                PayloadWithoutSignature = RawBytes.Take(RawBytes.Length - Signature.Length - 4).ToArray();
             }
         }
 
