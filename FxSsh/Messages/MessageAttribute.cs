@@ -3,7 +3,7 @@ using System.Diagnostics.Contracts;
 
 namespace FxSsh.Messages
 {
-    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class)]
     public sealed class MessageAttribute : Attribute
     {
         public MessageAttribute(string name, byte number)
@@ -14,7 +14,7 @@ namespace FxSsh.Messages
             Number = number;
         }
 
-        public string Name { get; private set; }
-        public byte Number { get; private set; }
+        public string Name { get; }
+        public byte Number { get; }
     }
 }

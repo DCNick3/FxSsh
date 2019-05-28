@@ -1,16 +1,16 @@
-﻿using FxSsh.Messages;
-using FxSsh.Messages.Userauth;
-using System;
+﻿using System;
 using System.Diagnostics.Contracts;
+using FxSsh.Messages;
+using FxSsh.Messages.Userauth;
 
 namespace FxSsh.Services
 {
     public class UserauthService : SshService, IDynamicInvoker
     {
-        private string _currentAuthMethod;
-        
         // This should be generalized to allow multistage auth too
         private readonly string[] _allowedMethods = {"publickey", "password"};
+        private string _currentAuthMethod;
+
         public UserauthService(ServerSession session)
             : base(session)
         {
@@ -44,7 +44,7 @@ namespace FxSsh.Services
                         return new PasswordChangeRequestMessage();
                     break;
             }
-            
+
             return new UnknownMessage();
         }
 
@@ -78,7 +78,7 @@ namespace FxSsh.Services
             var verified = false;
 
             var args = new UserauthArgs(_session, message.Username, message.Password);
-            
+
             Userauth?.Invoke(this, args);
             verified = args.Result;
 
@@ -109,14 +109,13 @@ namespace FxSsh.Services
                 var keyAlg = Session._publicKeyAlgorithms[message.KeyAlgorithmName]
                     .FromKeyAndCertificatesData(message.PublicKey);
 
-                var args = new UserauthArgs(base._session, message.Username, message.KeyAlgorithmName,
+                var args = new UserauthArgs(_session, message.Username, message.KeyAlgorithmName,
                     keyAlg.GetFingerprint(), message.PublicKey);
                 Userauth?.Invoke(this, args);
                 verified = args.Result;
 
                 if (verified)
                 {
-
                     if (!message.HasSignature)
                     {
                         _session.SendMessage(new PublicKeyOkMessage
@@ -142,7 +141,7 @@ namespace FxSsh.Services
                     }
                 }
             }
-            
+
             _session.SendMessage(new FailureMessage
             {
                 AuthorizationMethodsThatCanContinue = _allowedMethods,

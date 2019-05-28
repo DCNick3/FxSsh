@@ -14,7 +14,7 @@ namespace FxSsh
             DisconnectReason = disconnectReason;
         }
 
-        public DisconnectReason DisconnectReason { get; private set; }
+        public DisconnectReason DisconnectReason { get; }
 
         public override string ToString()
         {

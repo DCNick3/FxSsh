@@ -1,6 +1,3 @@
-using System;
-using System.Runtime.ConstrainedExecution;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using NSec.Cryptography;
@@ -23,7 +20,7 @@ namespace FxSsh.Algorithms
                 });
             _publicKey = _privateKey.PublicKey;
         }
-        
+
         public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {
             _privateKey = Key.Import(_algorithm, bytes, KeyBlobFormat.RawPrivateKey);
@@ -35,7 +32,7 @@ namespace FxSsh.Algorithms
         {
             using (var worker = new SshDataWorker(data))
             {
-                if (worker.ReadString(Encoding.ASCII) != this.Name)
+                if (worker.ReadString(Encoding.ASCII) != Name)
                     throw new CryptographicException("Key and certificates were not created with this algorithm.");
 
                 var pubKey = worker.ReadBinary();
@@ -50,7 +47,7 @@ namespace FxSsh.Algorithms
         {
             if (_privateKey == null)
                 GenerateKey();
-            
+
             return _privateKey.Export(KeyBlobFormat.RawPrivateKey);
         }
 
@@ -58,12 +55,12 @@ namespace FxSsh.Algorithms
         {
             if (_publicKey == null)
                 GenerateKey();
-            
+
             using (var worker = new SshDataWorker())
             {
                 worker.Write(Name, Encoding.ASCII);
                 worker.WriteBinary(_publicKey.Export(KeyBlobFormat.RawPublicKey));
-                
+
                 return worker.ToByteArray();
             }
         }
@@ -77,7 +74,7 @@ namespace FxSsh.Algorithms
         {
             if (_privateKey == null)
                 throw new CryptographicException("No private key");
-            
+
             return _algorithm.Sign(_privateKey, data);
         }
     }

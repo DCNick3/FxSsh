@@ -10,7 +10,8 @@ namespace FxSsh.Algorithms
         private readonly CipherModeEx _mode;
         private readonly ICryptoTransform _transform;
 
-        public EncryptionAlgorithm(SymmetricAlgorithm algorithm, int keySize, CipherModeEx mode, byte[] key, byte[] iv, bool isEncryption)
+        public EncryptionAlgorithm(SymmetricAlgorithm algorithm, int keySize, CipherModeEx mode, byte[] key, byte[] iv,
+            bool isEncryption)
         {
             Contract.Requires(algorithm != null);
             Contract.Requires(key != null);
@@ -28,10 +29,7 @@ namespace FxSsh.Algorithms
             _transform = CreateTransform(isEncryption);
         }
 
-        public int BlockBytesSize
-        {
-            get { return _algorithm.BlockSize >> 3; }
-        }
+        public int BlockBytesSize => _algorithm.BlockSize >> 3;
 
         public byte[] Transform(byte[] input)
         {

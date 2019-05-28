@@ -5,6 +5,19 @@ namespace FxSsh.Messages
 {
     public abstract class Message
     {
+        public enum Group
+        {
+            TransportLayerGeneric,
+            AlgorithmNegotiations,
+            KeyExchangeMethodSpecific,
+            UserauthGeneric,
+            UserauthMethodSpecific,
+            ConnectionProtocolGeneric,
+            ChannelRelated,
+            Reserved,
+            LocalExtensions
+        }
+
         public abstract byte MessageType { get; }
 
         protected byte[] RawBytes { get; set; }
@@ -84,19 +97,6 @@ namespace FxSsh.Messages
                 default:
                     throw new ArgumentOutOfRangeException(nameof(number));
             }
-        }
-        
-        public enum Group
-        {
-            TransportLayerGeneric,
-            AlgorithmNegotiations,
-            KeyExchangeMethodSpecific,
-            UserauthGeneric,
-            UserauthMethodSpecific,
-            ConnectionProtocolGeneric,
-            ChannelRelated,
-            Reserved,
-            LocalExtensions,
         }
     }
 }

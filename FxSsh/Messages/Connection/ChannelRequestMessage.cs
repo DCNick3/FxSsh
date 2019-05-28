@@ -11,7 +11,7 @@ namespace FxSsh.Messages.Connection
         public string RequestType { get; set; }
         public bool WantReply { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

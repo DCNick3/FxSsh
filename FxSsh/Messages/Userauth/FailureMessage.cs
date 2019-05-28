@@ -12,7 +12,7 @@ namespace FxSsh.Messages.Userauth
 
         public IReadOnlyList<string> AuthorizationMethodsThatCanContinue { get; set; }
         public bool PartialSuccess { get; set; }
-        
+
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
             AuthorizationMethodsThatCanContinue = reader.ReadString(Encoding.ASCII).Split(',');

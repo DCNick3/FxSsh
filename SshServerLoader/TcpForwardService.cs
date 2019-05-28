@@ -8,11 +8,11 @@ namespace SshServerLoader
 {
     public class TcpForwardService
     {
-        private Socket _socket;
-        private string _host;
-        private int _port;
+        private readonly List<byte> _blocked;
         private bool _connected;
-        private List<byte> _blocked;
+        private readonly string _host;
+        private readonly int _port;
+        private readonly Socket _socket;
 
         public TcpForwardService(string host, int port, string originatorIP, int originatorPort)
         {
@@ -52,6 +52,7 @@ namespace SshServerLoader
                         _socket.Send(_blocked.ToArray());
                         _blocked.Clear();
                     }
+
                     _socket.Send(data);
                 }
                 else
@@ -71,7 +72,9 @@ namespace SshServerLoader
             {
                 _socket.Shutdown(SocketShutdown.Send);
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         private void MessageLoop()
@@ -91,6 +94,7 @@ namespace SshServerLoader
                     : bytes;
                 DataReceived?.Invoke(this, data);
             }
+
             CloseReceived?.Invoke(this, EventArgs.Empty);
         }
     }

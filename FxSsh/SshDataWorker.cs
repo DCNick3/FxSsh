@@ -21,17 +21,16 @@ namespace FxSsh
             _ms = new MemoryStream(buffer);
         }
 
-        public long DataAvailable
+        public long DataAvailable => _ms.Length - _ms.Position;
+
+        public void Dispose()
         {
-            get
-            {
-                return _ms.Length - _ms.Position;
-            }
+            _ms.Dispose();
         }
 
         public void Write(bool value)
         {
-            _ms.WriteByte(value ? (byte)1 : (byte)0);
+            _ms.WriteByte(value ? (byte) 1 : (byte) 0);
         }
 
         public void Write(byte value)
@@ -41,15 +40,16 @@ namespace FxSsh
 
         public void Write(uint value)
         {
-            var bytes = new[] { (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)(value & 0xFF) };
+            var bytes = new[] {(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) (value & 0xFF)};
             _ms.Write(bytes, 0, 4);
         }
 
         public void Write(ulong value)
         {
-            var bytes = new[] {
-                (byte)(value >> 56), (byte)(value >> 48), (byte)(value >> 40), (byte)(value >> 32),
-                (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)(value & 0xFF)
+            var bytes = new[]
+            {
+                (byte) (value >> 56), (byte) (value >> 48), (byte) (value >> 40), (byte) (value >> 32),
+                (byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) (value & 0xFF)
             };
             _ms.Write(bytes, 0, 8);
         }
@@ -73,12 +73,12 @@ namespace FxSsh
             }
             else
             {
-                var length = (uint)data.Length;
-                var high = ((data[0] & 0x80) != 0);
+                var length = (uint) data.Length;
+                var high = (data[0] & 0x80) != 0;
                 if (high)
                 {
                     Write(length + 1);
-                    Write((byte)0);
+                    Write(0);
                     Write(data);
                 }
                 else
@@ -100,7 +100,7 @@ namespace FxSsh
         {
             Contract.Requires(buffer != null);
 
-            Write((uint)buffer.Length);
+            Write((uint) buffer.Length);
             _ms.Write(buffer, 0, buffer.Length);
         }
 
@@ -108,7 +108,7 @@ namespace FxSsh
         {
             Contract.Requires(buffer != null);
 
-            Write((uint)count);
+            Write((uint) count);
             _ms.Write(buffer, offset, count);
         }
 
@@ -130,14 +130,15 @@ namespace FxSsh
         public uint ReadUInt32()
         {
             var data = ReadBinary(4);
-            return (uint)(data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]);
+            return (uint) ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]);
         }
 
         public ulong ReadUInt64()
         {
             var data = ReadBinary(8);
-            return ((ulong)data[0] << 56 | (ulong)data[1] << 48 | (ulong)data[2] << 40 | (ulong)data[3] << 32 |
-                    (ulong)data[4] << 24 | (ulong)data[5] << 16 | (ulong)data[6] << 8 | data[7]);
+            return ((ulong) data[0] << 56) | ((ulong) data[1] << 48) | ((ulong) data[2] << 40) |
+                   ((ulong) data[3] << 32) |
+                   ((ulong) data[4] << 24) | ((ulong) data[5] << 16) | ((ulong) data[6] << 8) | data[7];
         }
 
         public string ReadString(Encoding encoding)
@@ -180,17 +181,12 @@ namespace FxSsh
         {
             var length = ReadUInt32();
 
-            return ReadBinary((int)length);
+            return ReadBinary((int) length);
         }
 
         public byte[] ToByteArray()
         {
             return _ms.ToArray();
-        }
-
-        public void Dispose()
-        {
-            _ms.Dispose();
         }
     }
 }

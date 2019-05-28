@@ -1,14 +1,14 @@
-﻿using FxSsh.Messages;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using FxSsh.Messages;
 
 namespace FxSsh
 {
     public static class DynamicInvoker
     {
-        static Dictionary<string, Action<IDynamicInvoker, Message>> _cache =
+        private static readonly Dictionary<string, Action<IDynamicInvoker, Message>> _cache =
             new Dictionary<string, Action<IDynamicInvoker, Message>>();
 
         public static void InvokeHandleMessage(this IDynamicInvoker instance, Message message)
@@ -22,10 +22,10 @@ namespace FxSsh
             {
                 var method = instance.GetType()
                     .GetMethod("HandleMessage",
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy,
-                    null,
-                    new[] { message.GetType() },
-                    null);
+                        BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy,
+                        null,
+                        new[] {message.GetType()},
+                        null);
                 var insparam = Expression.Parameter(typeof(IDynamicInvoker));
                 var msgparam = Expression.Parameter(typeof(Message));
                 var call = Expression.Call(
@@ -35,9 +35,12 @@ namespace FxSsh
                 action = Expression.Lambda<Action<IDynamicInvoker, Message>>(call, insparam, msgparam).Compile();
                 _cache[key] = action;
             }
+
             action(instance, message);
         }
     }
 
-    public interface IDynamicInvoker { }
+    public interface IDynamicInvoker
+    {
+    }
 }

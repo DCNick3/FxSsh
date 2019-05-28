@@ -9,6 +9,6 @@ namespace FxSsh
         AdministrativelyProhibited = 1,
         ConnectFailed = 2,
         UnknownChannelType = 3,
-        ResourceShortage = 4,
+        ResourceShortage = 4
     }
 }

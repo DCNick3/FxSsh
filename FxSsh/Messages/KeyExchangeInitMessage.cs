@@ -1,5 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace FxSsh.Messages
@@ -43,7 +42,7 @@ namespace FxSsh.Messages
 
         public uint Reserved { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

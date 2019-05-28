@@ -17,9 +17,9 @@ namespace FxSsh.Services
             AttachedUserauthArgs = userauthArgs;
         }
 
-        public SessionChannel Channel { get; private set; }
-        public string Name { get; private set; }
-        public string Value { get; private set; }
-        public UserauthArgs AttachedUserauthArgs { get; private set; }
+        public SessionChannel Channel { get; }
+        public string Name { get; }
+        public string Value { get; }
+        public UserauthArgs AttachedUserauthArgs { get; }
     }
 }

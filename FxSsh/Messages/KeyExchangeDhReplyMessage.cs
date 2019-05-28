@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace FxSsh.Messages
+﻿namespace FxSsh.Messages
 {
     [Message("SSH_MSG_KEXDH_REPLY", MessageNumber)]
     public class KeyExchangeDhReplyMessage : Message
@@ -11,8 +9,8 @@ namespace FxSsh.Messages
         public byte[] F { get; set; }
         public byte[] Signature { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
-        
+        public override byte MessageType => MessageNumber;
+
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
             HostKey = reader.ReadBinary();

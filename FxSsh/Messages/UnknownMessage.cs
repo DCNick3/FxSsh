@@ -8,11 +8,11 @@ namespace FxSsh.Messages
 
         public byte UnknownMessageType { get; set; }
 
-        public override byte MessageType { get { throw new NotSupportedException();} }
+        public override byte MessageType => throw new NotSupportedException();
 
         public UnimplementedMessage MakeUnimplementedMessage()
         {
-            return new UnimplementedMessage()
+            return new UnimplementedMessage
             {
                 SequenceNumber = SequenceNumber
             };

@@ -6,7 +6,7 @@ namespace SshServerLoader
     {
         public GitService(string command, string project)
             : base(Path.Combine(@"D:\PortableGit\mingw64\libexec\git-core", command + ".exe"),
-                  Path.Combine(@"F:\Dev\GitTest\", project + ".git"))
+                Path.Combine(@"F:\Dev\GitTest\", project + ".git"))
         {
         }
     }

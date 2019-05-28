@@ -1,7 +1,4 @@
-﻿using FxSsh.Algorithms;
-using FxSsh.Messages;
-using FxSsh.Services;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -11,6 +8,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using FxSsh.Algorithms;
+using FxSsh.Messages;
+using FxSsh.Services;
 
 namespace FxSsh
 {
@@ -24,18 +24,21 @@ namespace FxSsh
 
         private static readonly RandomNumberGenerator _rng = new RNGCryptoServiceProvider();
         private static readonly Dictionary<byte, Type> _messagesMetadata;
+
         internal static readonly Dictionary<string, Func<KexAlgorithm>> _keyExchangeAlgorithms =
             new Dictionary<string, Func<KexAlgorithm>>();
-        
+
         internal static readonly
             Dictionary<string, (Func<byte[], PublicKeyAlgorithm> FromCspBlob, Func<byte[], PublicKeyAlgorithm>
                 FromKeyAndCertificatesData)> _publicKeyAlgorithms =
                 new Dictionary<string, (Func<byte[], PublicKeyAlgorithm>, Func<byte[], PublicKeyAlgorithm>)>();
-        
+
         internal static readonly Dictionary<string, Func<CipherInfo>> _encryptionAlgorithms =
             new Dictionary<string, Func<CipherInfo>>();
+
         internal static readonly Dictionary<string, Func<HmacInfo>> _hmacAlgorithms =
             new Dictionary<string, Func<HmacInfo>>();
+
         internal static readonly Dictionary<string, Func<CompressionAlgorithm>> _compressionAlgorithms =
             new Dictionary<string, Func<CompressionAlgorithm>>();
 
@@ -52,38 +55,50 @@ namespace FxSsh
         private uint _inboundPacketSequence;
         private uint _outboundFlow;
         private uint _inboundFlow;
-        private bool _disconnecting = false;
-        private Algorithms _algorithms = null;
-        protected ExchangeContext _exchangeContext = null;
+        private bool _disconnecting;
+        private Algorithms _algorithms;
+        protected ExchangeContext _exchangeContext;
         private readonly ConcurrentQueue<Message> _blockedMessages = new ConcurrentQueue<Message>();
         private readonly EventWaitHandle _hasBlockedMessagesWaitHandle = new ManualResetEvent(true);
 
         public abstract SessionRole Role { get; }
-        public string LocalVersion { get; private set; }
+        public string LocalVersion { get; }
         public string RemoteVersion { get; private set; }
         public byte[] SessionId { get; protected set; }
 
         public T GetService<T>() where T : SshService
         {
-            return (T)_services.FirstOrDefault(x => x is T);
+            return (T) _services.FirstOrDefault(x => x is T);
         }
-        
+
         static Session()
         {
-            _keyExchangeAlgorithms.Add("diffie-hellman-group14-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(2048)));
-            _keyExchangeAlgorithms.Add("diffie-hellman-group1-sha1", () => new DiffieHellmanGroupSha1(new DiffieHellman(1024)));
-    
-            _publicKeyAlgorithms.Add("ssh-rsa", (x => new RsaKey().ImportInternalBlob(x), x => new RsaKey().ImportKeyAndCertificatesData(x)));
-            _publicKeyAlgorithms.Add("ssh-dss", (x => new DssKey().ImportInternalBlob(x), x => new DssKey().ImportKeyAndCertificatesData(x)));
-            _publicKeyAlgorithms.Add("ssh-ed25519", (x => new Ed25519Key().ImportInternalBlob(x), x => new Ed25519Key().ImportKeyAndCertificatesData(x)));
+            _keyExchangeAlgorithms.Add("diffie-hellman-group14-sha1",
+                () => new DiffieHellmanGroupSha1(new DiffieHellman(2048)));
+            _keyExchangeAlgorithms.Add("diffie-hellman-group1-sha1",
+                () => new DiffieHellmanGroupSha1(new DiffieHellman(1024)));
 
-            _encryptionAlgorithms.Add("aes128-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CTR));
-            _encryptionAlgorithms.Add("aes192-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CTR));
-            _encryptionAlgorithms.Add("aes256-ctr", () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CTR));
-            _encryptionAlgorithms.Add("aes128-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CBC));
-            _encryptionAlgorithms.Add("aes192-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CBC));
-            _encryptionAlgorithms.Add("aes256-cbc", () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CBC));
-            _encryptionAlgorithms.Add("3des-cbc", () => new CipherInfo(new TripleDESCryptoServiceProvider(), 192, CipherModeEx.CBC));
+            _publicKeyAlgorithms.Add("ssh-rsa",
+                (x => new RsaKey().ImportInternalBlob(x), x => new RsaKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-dss",
+                (x => new DssKey().ImportInternalBlob(x), x => new DssKey().ImportKeyAndCertificatesData(x)));
+            _publicKeyAlgorithms.Add("ssh-ed25519",
+                (x => new Ed25519Key().ImportInternalBlob(x), x => new Ed25519Key().ImportKeyAndCertificatesData(x)));
+
+            _encryptionAlgorithms.Add("aes128-ctr",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CTR));
+            _encryptionAlgorithms.Add("aes192-ctr",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CTR));
+            _encryptionAlgorithms.Add("aes256-ctr",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CTR));
+            _encryptionAlgorithms.Add("aes128-cbc",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 128, CipherModeEx.CBC));
+            _encryptionAlgorithms.Add("aes192-cbc",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 192, CipherModeEx.CBC));
+            _encryptionAlgorithms.Add("aes256-cbc",
+                () => new CipherInfo(new AesCryptoServiceProvider(), 256, CipherModeEx.CBC));
+            _encryptionAlgorithms.Add("3des-cbc",
+                () => new CipherInfo(new TripleDESCryptoServiceProvider(), 192, CipherModeEx.CBC));
 
             _hmacAlgorithms.Add("hmac-md5", () => new HmacInfo(new HMACMD5(), 128));
             _hmacAlgorithms.Add("hmac-sha1", () => new HmacInfo(new HMACSHA1(), 160));
@@ -91,10 +106,11 @@ namespace FxSsh
             _compressionAlgorithms.Add("none", () => new NoCompression());
 
             _messagesMetadata = (from t in typeof(Message).Assembly.GetTypes()
-                                 let attrib = (MessageAttribute)t.GetCustomAttributes(typeof(MessageAttribute), false).FirstOrDefault()
-                                 where attrib != null
-                                 select new { attrib.Number, Type = t })
-                                 .ToDictionary(x => x.Number, x => x.Type);
+                    let attrib =
+                        (MessageAttribute) t.GetCustomAttributes(typeof(MessageAttribute), false).FirstOrDefault()
+                    where attrib != null
+                    select new {attrib.Number, Type = t})
+                .ToDictionary(x => x.Number, x => x.Type);
         }
 
         public Session(Socket socket, string programVersion)
@@ -104,32 +120,26 @@ namespace FxSsh
 
             _socket = socket;
             LocalVersion = programVersion;
-            
         }
 
         public event EventHandler<EventArgs> Disconnected;
 
-        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange; 
+        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange;
 
         public event EventHandler<KeyExchangeArgs> KeysExchanged;
 
         public void EstablishConnection()
         {
-            if (!_socket.Connected)
-            {
-                return;
-            }
+            if (!_socket.Connected) return;
 
             SetSocketOptions();
 
             SocketWriteProtocolVersion();
             RemoteVersion = SocketReadProtocolVersion();
             if (!Regex.IsMatch(RemoteVersion, "SSH-2.0-.+"))
-            {
                 throw new SshConnectionException(
                     string.Format("Not supported SSH version {0}. This library supports SSH v2.0.", RemoteVersion),
                     DisconnectReason.ProtocolVersionNotSupported);
-            }
 
             ConsiderReExchange(true);
 
@@ -146,17 +156,15 @@ namespace FxSsh
             }
             finally
             {
-                foreach (var service in _services)
-                {
-                    service.CloseService();
-                }
+                foreach (var service in _services) service.CloseService();
             }
         }
 
-        public void Disconnect(DisconnectReason reason = DisconnectReason.ByApplication, string description = "Connection terminated by the server.")
+        public void Disconnect(DisconnectReason reason = DisconnectReason.ByApplication,
+            string description = "Connection terminated by the server.")
         {
             Contract.Requires(description != null);
-            
+
             if (!_disconnecting)
             {
                 var message = new DisconnectMessage(reason, description);
@@ -169,20 +177,23 @@ namespace FxSsh
                 _socket.Close();
                 _socket.Dispose();
             }
-            catch { }
+            catch
+            {
+            }
 
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
 
         #region Socket operations
+
         private void SetSocketOptions()
         {
             const int socketBufferSize = 2 * MaximumSshPacketSize;
             _socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-            _socket.LingerState = new LingerOption(enable: false, seconds: 0);
+            _socket.LingerState = new LingerOption(false, 0);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, socketBufferSize);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, socketBufferSize);
-            _socket.ReceiveTimeout = (int)_timeout.TotalMilliseconds;
+            _socket.ReceiveTimeout = (int) _timeout.TotalMilliseconds;
         }
 
         private string SocketReadProtocolVersion()
@@ -200,20 +211,19 @@ namespace FxSsh
                 len = _socket.EndReceive(ar);
 
                 if (len == 0)
-                {
-                    throw new SshConnectionException("Could't read the protocal version", DisconnectReason.ProtocolError);
-                }
+                    throw new SshConnectionException("Could't read the protocal version",
+                        DisconnectReason.ProtocolError);
 
                 for (var i = 0; i < len; i++, pos++)
-                {
                     if (pos > 0 && buffer[pos - 1] == CarriageReturn && buffer[pos] == LineFeed)
                     {
                         _socket.Receive(dummy, 0, i + 1, SocketFlags.None);
                         return Encoding.ASCII.GetString(buffer, 0, pos - 1);
                     }
-                }
+
                 _socket.Receive(dummy, 0, len, SocketFlags.None);
             }
+
             throw new SshConnectionException("Could't read the protocal version", DisconnectReason.ProtocolError);
         }
 
@@ -230,23 +240,18 @@ namespace FxSsh
             var msSinceLastData = 0;
 
             while (pos < length)
-            {
                 try
                 {
                     var ar = _socket.BeginReceive(buffer, pos, length - pos, SocketFlags.None, null, null);
                     WaitHandle(ar);
                     var len = _socket.EndReceive(ar);
                     if (!_socket.Connected)
-                    {
                         throw new SshConnectionException("Connection lost", DisconnectReason.ConnectionLost);
-                    }
 
                     if (len == 0 && _socket.Available == 0)
                     {
                         if (msSinceLastData >= _timeout.TotalMilliseconds)
-                        {
                             throw new SshConnectionException("Connection lost", DisconnectReason.ConnectionLost);
-                        }
 
                         msSinceLastData += 50;
                         Thread.Sleep(50);
@@ -263,13 +268,10 @@ namespace FxSsh
                     if (exp.SocketErrorCode == SocketError.WouldBlock ||
                         exp.SocketErrorCode == SocketError.IOPending ||
                         exp.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
-                    {
                         Thread.Sleep(30);
-                    }
                     else
                         throw new SshConnectionException("Connection lost", DisconnectReason.ConnectionLost);
                 }
-            }
 
             return buffer;
         }
@@ -280,7 +282,6 @@ namespace FxSsh
             var length = data.Length;
 
             while (pos < length)
-            {
                 try
                 {
                     var ar = _socket.BeginSend(data, pos, length - pos, SocketFlags.None, null, null);
@@ -292,35 +293,35 @@ namespace FxSsh
                     if (ex.SocketErrorCode == SocketError.WouldBlock ||
                         ex.SocketErrorCode == SocketError.IOPending ||
                         ex.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
-                    {
                         Thread.Sleep(30);
-                    }
                     else
                         throw new SshConnectionException("Connection lost", DisconnectReason.ConnectionLost);
                 }
-            }
         }
 
         private void WaitHandle(IAsyncResult ar)
         {
             if (!ar.AsyncWaitHandle.WaitOne(_timeout))
-                throw new SshConnectionException(string.Format("Socket operation has timed out after {0:F0} milliseconds.",
-                    _timeout.TotalMilliseconds),
+                throw new SshConnectionException(string.Format(
+                        "Socket operation has timed out after {0:F0} milliseconds.",
+                        _timeout.TotalMilliseconds),
                     DisconnectReason.ConnectionLost);
         }
+
         #endregion
 
         #region Message operations
+
         private Message ReceiveMessage()
         {
             var useAlg = _algorithms != null;
 
-            var blockSize = (byte)(useAlg ? Math.Max(8, _algorithms.ReceiveEncryption.BlockBytesSize) : 8);
+            var blockSize = (byte) (useAlg ? Math.Max(8, _algorithms.ReceiveEncryption.BlockBytesSize) : 8);
             var firstBlock = SocketRead(blockSize);
             if (useAlg)
                 firstBlock = _algorithms.ReceiveEncryption.Transform(firstBlock);
 
-            var packetLength = firstBlock[0] << 24 | firstBlock[1] << 16 | firstBlock[2] << 8 | firstBlock[3];
+            var packetLength = (firstBlock[0] << 24) | (firstBlock[1] << 16) | (firstBlock[2] << 8) | firstBlock[3];
             var paddingLength = firstBlock[4];
             var bytesToRead = packetLength - blockSize + 4;
 
@@ -335,9 +336,7 @@ namespace FxSsh
                 var clientMac = SocketRead(_algorithms.ReceiveHmac.DigestLength);
                 var mac = ComputeHmac(_algorithms.ReceiveHmac, fullPacket, _inboundPacketSequence);
                 if (!clientMac.SequenceEqual(mac))
-                {
                     throw new SshConnectionException("Invalid MAC", DisconnectReason.MacError);
-                }
 
                 data = _algorithms.ReceiveCompression.Decompress(data);
             }
@@ -351,24 +350,25 @@ namespace FxSsh
                 var userauthService = GetService<UserauthService>();
                 if (userauthService == null)
                     throw new SshConnectionException("Userauth method-specific message received, but " +
-                                                     "userauth service is not registered", DisconnectReason.ProtocolError);
+                                                     "userauth service is not registered",
+                        DisconnectReason.ProtocolError);
                 message = userauthService.CreateMethodSpecificMessage(typeNumber);
             }
             else
             {
                 var implemented = _messagesMetadata.ContainsKey(typeNumber);
                 message = implemented
-                    ? (Message)Activator.CreateInstance(_messagesMetadata[typeNumber])
-                    : new UnknownMessage { SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber };
-            }   
+                    ? (Message) Activator.CreateInstance(_messagesMetadata[typeNumber])
+                    : new UnknownMessage {SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber};
+            }
 
             if (!(message is UnknownMessage))
                 message.LoadPacket(data);
-            
+
             lock (_locker)
             {
                 _inboundPacketSequence++;
-                _inboundFlow += (uint)packetLength;
+                _inboundFlow += (uint) packetLength;
             }
 
             ConsiderReExchange();
@@ -389,14 +389,16 @@ namespace FxSsh
 
             _hasBlockedMessagesWaitHandle.WaitOne();
             lock (_locker)
+            {
                 SendMessageInternal(message);
+            }
         }
 
         private void SendMessageInternal(Message message)
         {
             var useAlg = _algorithms != null;
 
-            var blockSize = (byte)(useAlg ? Math.Max(8, _algorithms.TransmitEncryption.BlockBytesSize) : 8);
+            var blockSize = (byte) (useAlg ? Math.Max(8, _algorithms.TransmitEncryption.BlockBytesSize) : 8);
             var payload = message.SerializePacket();
             if (useAlg)
                 payload = _algorithms.TransmitCompression.Compress(payload);
@@ -406,11 +408,11 @@ namespace FxSsh
             // the total length of (packet_length || padding_length || payload || padding)
             // is a multiple of the cipher block size or 8,
             // padding length must between 4 and 255 bytes.
-            var paddingLength = (byte)(blockSize - (payload.Length + 5) % blockSize);
+            var paddingLength = (byte) (blockSize - (payload.Length + 5) % blockSize);
             if (paddingLength < 4)
                 paddingLength += blockSize;
 
-            var packetLength = (uint)payload.Length + paddingLength + 1;
+            var packetLength = (uint) payload.Length + paddingLength + 1;
 
             var padding = new byte[paddingLength];
             _rng.GetBytes(padding);
@@ -446,12 +448,14 @@ namespace FxSsh
         {
             var kex = false;
             lock (_locker)
+            {
                 if (_exchangeContext == null
                     && (force || _inboundFlow + _outboundFlow > 1024 * 1024 * 512)) // 0.5 GiB
                 {
                     _exchangeContext = new ExchangeContext();
                     kex = true;
                 }
+            }
 
             if (kex)
             {
@@ -470,10 +474,7 @@ namespace FxSsh
             if (_blockedMessages.Count > 0)
             {
                 Message message;
-                while (_blockedMessages.TryDequeue(out message))
-                {
-                    SendMessageInternal(message);
-                }
+                while (_blockedMessages.TryDequeue(out message)) SendMessageInternal(message);
             }
         }
 
@@ -495,7 +496,7 @@ namespace FxSsh
         protected virtual KeyExchangeInitMessage LoadKexInitMessage()
         {
             var message = new KeyExchangeInitMessage();
-            PreKeyExchangeArgs preExchangeEventArgs = new PreKeyExchangeArgs()
+            var preExchangeEventArgs = new PreKeyExchangeArgs
             {
                 ServerHostKeyAlgorithms = _publicKeyAlgorithms.Keys.ToArray(),
                 KeyExchangeAlgorithms = _keyExchangeAlgorithms.Keys.ToArray(),
@@ -505,32 +506,34 @@ namespace FxSsh
                 MacAlgorithmsClientToServer = _hmacAlgorithms.Keys.ToArray(),
                 MacAlgorithmsServerToClient = _hmacAlgorithms.Keys.ToArray(),
                 CompressionAlgorithmsClientToServer = _compressionAlgorithms.Keys.ToArray(),
-                CompressionAlgorithmsServerToClient = _compressionAlgorithms.Keys.ToArray(),
+                CompressionAlgorithmsServerToClient = _compressionAlgorithms.Keys.ToArray()
             };
             // To allow user to ban weak algorithms
             PreKeyExchange?.Invoke(this, preExchangeEventArgs);
-            
+
             message.KeyExchangeAlgorithms = preExchangeEventArgs.KeyExchangeAlgorithms;
             message.ServerHostKeyAlgorithms = preExchangeEventArgs.ServerHostKeyAlgorithms;
-            
+
             message.EncryptionAlgorithmsClientToServer = preExchangeEventArgs.EncryptionAlgorithmsClientToServer;
             message.EncryptionAlgorithmsServerToClient = preExchangeEventArgs.EncryptionAlgorithmsServerToClient;
             message.MacAlgorithmsClientToServer = preExchangeEventArgs.MacAlgorithmsClientToServer;
             message.MacAlgorithmsServerToClient = preExchangeEventArgs.MacAlgorithmsServerToClient;
             message.CompressionAlgorithmsServerToClient = preExchangeEventArgs.CompressionAlgorithmsServerToClient;
             message.CompressionAlgorithmsClientToServer = preExchangeEventArgs.CompressionAlgorithmsClientToServer;
-            
-            message.LanguagesClientToServer = new[] { "" };
-            message.LanguagesServerToClient = new[] { "" };
+
+            message.LanguagesClientToServer = new[] {""};
+            message.LanguagesServerToClient = new[] {""};
             message.FirstKexPacketFollows = false;
             message.Reserved = 0;
 
-            
+
             return message;
         }
+
         #endregion
 
         #region Handle messages
+
         private void HandleMessageCore(Message message)
         {
             this.InvokeHandleMessage(message);
@@ -561,17 +564,25 @@ namespace FxSsh
             });
 
             var ourMessage = LoadKexInitMessage();
-            
-            _exchangeContext.KeyExchange = ChooseAlgorithm(ourMessage.KeyExchangeAlgorithms, message.KeyExchangeAlgorithms);
-            _exchangeContext.PublicKey = ChooseAlgorithm(ourMessage.ServerHostKeyAlgorithms, message.ServerHostKeyAlgorithms);
-            
-            
-            var clientToServerEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsClientToServer, message.EncryptionAlgorithmsClientToServer);
-            var serverToClientEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsServerToClient, message.EncryptionAlgorithmsServerToClient);
-            var clientToServerHmac = ChooseAlgorithm(ourMessage.MacAlgorithmsClientToServer, message.MacAlgorithmsClientToServer);
-            var serverToClientHmac = ChooseAlgorithm(ourMessage.MacAlgorithmsServerToClient, message.MacAlgorithmsServerToClient);
-            var clientToServerCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsClientToServer, message.CompressionAlgorithmsClientToServer);
-            var serverToClientCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsServerToClient, message.CompressionAlgorithmsServerToClient);
+
+            _exchangeContext.KeyExchange =
+                ChooseAlgorithm(ourMessage.KeyExchangeAlgorithms, message.KeyExchangeAlgorithms);
+            _exchangeContext.PublicKey =
+                ChooseAlgorithm(ourMessage.ServerHostKeyAlgorithms, message.ServerHostKeyAlgorithms);
+
+
+            var clientToServerEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsClientToServer,
+                message.EncryptionAlgorithmsClientToServer);
+            var serverToClientEncryption = ChooseAlgorithm(ourMessage.EncryptionAlgorithmsServerToClient,
+                message.EncryptionAlgorithmsServerToClient);
+            var clientToServerHmac =
+                ChooseAlgorithm(ourMessage.MacAlgorithmsClientToServer, message.MacAlgorithmsClientToServer);
+            var serverToClientHmac =
+                ChooseAlgorithm(ourMessage.MacAlgorithmsServerToClient, message.MacAlgorithmsServerToClient);
+            var clientToServerCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsClientToServer,
+                message.CompressionAlgorithmsClientToServer);
+            var serverToClientCompression = ChooseAlgorithm(ourMessage.CompressionAlgorithmsServerToClient,
+                message.CompressionAlgorithmsServerToClient);
 
             if (Role == SessionRole.Server)
             {
@@ -591,7 +602,7 @@ namespace FxSsh
                 _exchangeContext.ReceiveCompression = serverToClientCompression;
                 _exchangeContext.TransmitCompression = clientToServerCompression;
             }
-            
+
             if (Role == SessionRole.Server)
                 _exchangeContext.ClientKexInitPayload = message.SerializePacket();
             else
@@ -619,14 +630,13 @@ namespace FxSsh
         protected void HandleMessage(UnimplementedMessage message)
         {
         }
-        
+
         #endregion
 
         protected abstract void DoExchange();
 
         private string ChooseAlgorithm(string[] localAlgorithms, string[] remoteAlgorithms)
         {
-
             string[] serverAlgorithms, clientAlgorithms;
             if (Role == SessionRole.Server)
             {
@@ -638,15 +648,17 @@ namespace FxSsh
                 clientAlgorithms = localAlgorithms;
                 serverAlgorithms = remoteAlgorithms;
             }
+
             foreach (var client in clientAlgorithms)
-                foreach (var server in serverAlgorithms)
-                    if (client == server)
-                        return client;
+            foreach (var server in serverAlgorithms)
+                if (client == server)
+                    return client;
 
             throw new SshConnectionException("Failed to negotiate algorithm.", DisconnectReason.KeyExchangeFailed);
         }
 
-        protected byte[] ComputeExchangeHash(KexAlgorithm kexAlg, byte[] hostKeyAndCerts, byte[] clientExchangeValue, byte[] serverExchangeValue, byte[] sharedSecret)
+        protected byte[] ComputeExchangeHash(KexAlgorithm kexAlg, byte[] hostKeyAndCerts, byte[] clientExchangeValue,
+            byte[] serverExchangeValue, byte[] sharedSecret)
         {
             using (var worker = new SshDataWorker())
             {
@@ -672,7 +684,8 @@ namespace FxSsh
             }
         }
 
-        protected byte[] ComputeEncryptionKey(KexAlgorithm kexAlg, byte[] exchangeHash, int blockSize, byte[] sharedSecret, char letter)
+        protected byte[] ComputeEncryptionKey(KexAlgorithm kexAlg, byte[] exchangeHash, int blockSize,
+            byte[] sharedSecret, char letter)
         {
             var keyBuffer = new byte[blockSize];
             var keyBufferIndex = 0;
@@ -688,7 +701,7 @@ namespace FxSsh
 
                     if (currentHash == null)
                     {
-                        worker.Write((byte)letter);
+                        worker.Write((byte) letter);
                         worker.Write(SessionId);
                     }
                     else
@@ -722,30 +735,30 @@ namespace FxSsh
         protected class Algorithms
         {
             public KexAlgorithm KeyExchange;
-            public PublicKeyAlgorithm ServerIdentification;
-            public EncryptionAlgorithm ReceiveEncryption;
-            public EncryptionAlgorithm TransmitEncryption;
-            public HmacAlgorithm ReceiveHmac;
-            public HmacAlgorithm TransmitHmac;
             public CompressionAlgorithm ReceiveCompression;
+            public EncryptionAlgorithm ReceiveEncryption;
+            public HmacAlgorithm ReceiveHmac;
+            public PublicKeyAlgorithm ServerIdentification;
             public CompressionAlgorithm TransmitCompression;
+            public EncryptionAlgorithm TransmitEncryption;
+            public HmacAlgorithm TransmitHmac;
         }
 
         protected class ExchangeContext
         {
-            public string KeyExchange;
-            public string PublicKey;
-            public string ReceiveEncryption;
-            public string TransmitEncryption;
-            public string ReceiveHmac;
-            public string TransmitHmac;
-            public string ReceiveCompression;
-            public string TransmitCompression;
-
-            public byte[] ServerKexInitPayload;
             public byte[] ClientKexInitPayload;
+            public string KeyExchange;
 
             public Algorithms NewAlgorithms;
+            public string PublicKey;
+            public string ReceiveCompression;
+            public string ReceiveEncryption;
+            public string ReceiveHmac;
+
+            public byte[] ServerKexInitPayload;
+            public string TransmitCompression;
+            public string TransmitEncryption;
+            public string TransmitHmac;
         }
     }
 }

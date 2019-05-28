@@ -1,13 +1,11 @@
-﻿using System;
-
-namespace FxSsh.Messages
+﻿namespace FxSsh.Messages
 {
     [Message("SSH_MSG_NEWKEYS", MessageNumber)]
     public class NewKeysMessage : Message
     {
         public const byte MessageNumber = 21;
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

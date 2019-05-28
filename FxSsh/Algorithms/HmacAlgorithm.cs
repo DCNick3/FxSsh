@@ -17,10 +17,7 @@ namespace FxSsh.Algorithms
             algorithm.Key = key;
         }
 
-        public int DigestLength
-        {
-            get { return _algorithm.HashSize >> 3; }
-        }
+        public int DigestLength => _algorithm.HashSize >> 3;
 
         public byte[] ComputeHash(byte[] input)
         {

@@ -35,7 +35,7 @@ namespace FxSsh.Algorithms
 
             using (var worker = new SshDataWorker(signatureData))
             {
-                if (worker.ReadString(Encoding.ASCII) != this.Name)
+                if (worker.ReadString(Encoding.ASCII) != Name)
                     throw new CryptographicException("Signature was not created with this algorithm.");
 
                 var signature = worker.ReadBinary();
@@ -51,7 +51,7 @@ namespace FxSsh.Algorithms
             {
                 var signature = SignData(data);
 
-                worker.Write(this.Name, Encoding.ASCII);
+                worker.Write(Name, Encoding.ASCII);
                 worker.WriteBinary(signature);
 
                 return worker.ToByteArray();
@@ -61,7 +61,7 @@ namespace FxSsh.Algorithms
         public abstract PublicKeyAlgorithm ImportInternalBlob(byte[] bytes);
 
         public abstract PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data);
-        
+
         public abstract byte[] ExportCspBlob();
 
         public abstract byte[] ExportKeyAndCertificatesData();

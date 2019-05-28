@@ -1,5 +1,4 @@
-﻿
-namespace FxSsh.Messages.Connection
+﻿namespace FxSsh.Messages.Connection
 {
     [Message("SSH_MSG_CHANNEL_WINDOW_ADJUST", MessageNumber)]
     public class ChannelWindowAdjustMessage : ConnectionServiceMessage
@@ -9,7 +8,7 @@ namespace FxSsh.Messages.Connection
         public uint RecipientChannel { get; set; }
         public uint BytesToAdd { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

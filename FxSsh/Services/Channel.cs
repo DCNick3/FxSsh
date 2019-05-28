@@ -1,7 +1,7 @@
-﻿using FxSsh.Messages.Connection;
-using System;
+﻿using System;
 using System.Diagnostics.Contracts;
 using System.Threading;
+using FxSsh.Messages.Connection;
 
 namespace FxSsh.Services
 {
@@ -29,15 +29,15 @@ namespace FxSsh.Services
             ServerMaxPacketSize = Session.LocalChannelDataPacketSize;
         }
 
-        public uint ClientChannelId { get; private set; }
-        public uint ClientInitialWindowSize { get; private set; }
+        public uint ClientChannelId { get; }
+        public uint ClientInitialWindowSize { get; }
         public uint ClientWindowSize { get; protected set; }
-        public uint ClientMaxPacketSize { get; private set; }
+        public uint ClientMaxPacketSize { get; }
 
-        public uint ServerChannelId { get; private set; }
-        public uint ServerInitialWindowSize { get; private set; }
+        public uint ServerChannelId { get; }
+        public uint ServerInitialWindowSize { get; }
         public uint ServerWindowSize { get; protected set; }
-        public uint ServerMaxPacketSize { get; private set; }
+        public uint ServerMaxPacketSize { get; }
 
         public bool ClientClosed { get; private set; }
         public bool ClientMarkedEof { get; private set; }
@@ -52,15 +52,12 @@ namespace FxSsh.Services
         {
             Contract.Requires(data != null);
 
-            if (data.Length == 0)
-            {
-                return;
-            }
+            if (data.Length == 0) return;
 
             var msg = new ChannelDataMessage();
             msg.RecipientChannel = ClientChannelId;
 
-            var total = (uint)data.Length;
+            var total = (uint) data.Length;
             var offset = 0L;
             byte[] buf = null;
             do
@@ -91,7 +88,7 @@ namespace FxSsh.Services
                 return;
 
             ServerMarkedEof = true;
-            var msg = new ChannelEofMessage { RecipientChannel = ClientChannelId };
+            var msg = new ChannelEofMessage {RecipientChannel = ClientChannelId};
             _connectionService._session.SendMessage(msg);
         }
 
@@ -102,8 +99,9 @@ namespace FxSsh.Services
 
             ServerClosed = true;
             if (exitCode.HasValue)
-                _connectionService._session.SendMessage(new ExitStatusMessage { RecipientChannel = ClientChannelId, ExitStatus = exitCode.Value });
-            _connectionService._session.SendMessage(new ChannelCloseMessage { RecipientChannel = ClientChannelId });
+                _connectionService._session.SendMessage(new ExitStatusMessage
+                    {RecipientChannel = ClientChannelId, ExitStatus = exitCode.Value});
+            _connectionService._session.SendMessage(new ChannelCloseMessage {RecipientChannel = ClientChannelId});
 
             CheckBothClosed();
         }
@@ -112,7 +110,7 @@ namespace FxSsh.Services
         {
             Contract.Requires(data != null);
 
-            ServerAttemptAdjustWindow((uint)data.Length);
+            ServerAttemptAdjustWindow((uint) data.Length);
 
             if (DataReceived != null)
                 DataReceived(this, data);
@@ -163,10 +161,7 @@ namespace FxSsh.Services
 
         private void CheckBothClosed()
         {
-            if (ClientClosed && ServerClosed)
-            {
-                ForceClose();
-            }
+            if (ClientClosed && ServerClosed) ForceClose();
         }
 
         internal void ForceClose()

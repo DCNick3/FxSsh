@@ -7,8 +7,8 @@ namespace SshServerLoader
 {
     public class CommandService
     {
-        private Process _process = null;
-        private ProcessStartInfo _startInfo = null;
+        private Process _process;
+        private readonly ProcessStartInfo _startInfo;
 
         public CommandService(string command, string args)
         {
@@ -18,7 +18,7 @@ namespace SshServerLoader
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
-                UseShellExecute = false,
+                UseShellExecute = false
             };
         }
 
@@ -57,8 +57,9 @@ namespace SshServerLoader
                     : bytes;
                 DataReceived?.Invoke(this, data);
             }
+
             EofReceived?.Invoke(this, EventArgs.Empty);
-            CloseReceived?.Invoke(this, (uint)_process.ExitCode);
+            CloseReceived?.Invoke(this, (uint) _process.ExitCode);
         }
     }
 }

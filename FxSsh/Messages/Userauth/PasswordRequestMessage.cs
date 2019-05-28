@@ -9,7 +9,7 @@ namespace FxSsh.Messages.Userauth
         {
             MethodName = "password";
         }
-        
+
         public string Password { get; set; }
         public string NewPassword { get; set; }
         public bool IsPasswordUpdate { get; set; }
@@ -30,7 +30,7 @@ namespace FxSsh.Messages.Userauth
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             base.SerializePacketInternal(writer);
-            
+
             writer.Write(IsPasswordUpdate);
             writer.Write(Password, Encoding.UTF8);
             if (IsPasswordUpdate)

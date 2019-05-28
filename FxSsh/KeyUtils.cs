@@ -1,12 +1,13 @@
-﻿using FxSsh.Algorithms;
-using System;
+﻿using System;
 using System.Diagnostics.Contracts;
-using System.Security.Cryptography;
+using FxSsh.Algorithms;
 
 namespace FxSsh
 {
     public static class KeyUtils
     {
+        public static string[] SupportedAlgorithms => new[] {"ssh-rsa", "ssh-dss", "ssh-ed25519"};
+
         private static PublicKeyAlgorithm GetKeyAlgorithm(string type)
         {
             Contract.Requires(type != null);
@@ -31,11 +32,6 @@ namespace FxSsh
             var alg = GetKeyAlgorithm(type);
             var bytes = alg.ExportCspBlob();
             return Convert.ToBase64String(bytes);
-        }
-
-        public static string[] SupportedAlgorithms
-        {
-            get { return new string[] { "ssh-rsa", "ssh-dss", "ssh-ed25519" }; }
         }
     }
 }

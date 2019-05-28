@@ -1,5 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace FxSsh.Algorithms
@@ -8,10 +7,7 @@ namespace FxSsh.Algorithms
     {
         private readonly RSACryptoServiceProvider _algorithm = new RSACryptoServiceProvider();
 
-        public override string Name
-        {
-            get { return "ssh-rsa"; }
-        }
+        public override string Name => "ssh-rsa";
 
         public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {
@@ -28,7 +24,7 @@ namespace FxSsh.Algorithms
         {
             using (var worker = new SshDataWorker(data))
             {
-                if (worker.ReadString(Encoding.ASCII) != this.Name)
+                if (worker.ReadString(Encoding.ASCII) != Name)
                     throw new CryptographicException("Key and certificates were not created with this algorithm.");
 
                 var args = new RSAParameters();
@@ -47,7 +43,7 @@ namespace FxSsh.Algorithms
             {
                 var args = _algorithm.ExportParameters(false);
 
-                worker.Write(this.Name, Encoding.ASCII);
+                worker.Write(Name, Encoding.ASCII);
                 worker.WriteMpint(args.Exponent);
                 worker.WriteMpint(args.Modulus);
 

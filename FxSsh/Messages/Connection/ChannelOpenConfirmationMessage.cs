@@ -1,5 +1,4 @@
-﻿
-namespace FxSsh.Messages.Connection
+﻿namespace FxSsh.Messages.Connection
 {
     [Message("SSH_MSG_CHANNEL_OPEN_CONFIRMATION", MessageNumber)]
     public class ChannelOpenConfirmationMessage : ConnectionServiceMessage
@@ -11,7 +10,7 @@ namespace FxSsh.Messages.Connection
         public uint InitialWindowSize { get; set; }
         public uint MaximumPacketSize { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {

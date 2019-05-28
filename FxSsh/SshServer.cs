@@ -4,7 +4,6 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using FxSsh.Services;
 
@@ -12,16 +11,17 @@ namespace FxSsh
 {
     public class SshServer : IDisposable
     {
+        private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
         private readonly object _lock = new object();
         private readonly List<Session> _sessions = new List<Session>();
-        private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
         private bool _isDisposed;
+        private TcpListener _listenser;
         private bool _started;
-        private TcpListener _listenser = null;
 
         public SshServer()
             : this(new StartingInfo())
-        { }
+        {
+        }
 
         public SshServer(StartingInfo info)
         {
@@ -30,11 +30,25 @@ namespace FxSsh
             StartingInfo = info;
         }
 
-        public StartingInfo StartingInfo { get; private set; }
+        public StartingInfo StartingInfo { get; }
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            lock (_lock)
+            {
+                if (_isDisposed)
+                    return;
+                Stop();
+            }
+        }
+
+        #endregion
 
         public event EventHandler<ServerSession> ConnectionAccepted;
         public event EventHandler<Exception> ExceptionRasied;
-        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange; 
+        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange;
 
         public void Start()
         {
@@ -70,7 +84,6 @@ namespace FxSsh
                 _started = false;
 
                 foreach (var session in _sessions.ToArray())
-                {
                     try
                     {
                         session.Disconnect();
@@ -79,7 +92,6 @@ namespace FxSsh
                     {
                         // ignored
                     }
-                }
             }
         }
 
@@ -95,7 +107,7 @@ namespace FxSsh
         {
             Contract.Requires(type != null);
             Contract.Requires(key != null);
-            
+
             if (!_hostKey.ContainsKey(type))
                 _hostKey.Add(type, key.ToArray());
         }
@@ -108,7 +120,6 @@ namespace FxSsh
             }
             catch (ObjectDisposedException)
             {
-                return;
             }
             catch
             {
@@ -127,10 +138,16 @@ namespace FxSsh
                     var session = new ServerSession(socket, _hostKey, StartingInfo.ServerBanner);
                     session.Disconnected += (ss, ee) =>
                     {
-                        lock (_lock) _sessions.Remove(session);
+                        lock (_lock)
+                        {
+                            _sessions.Remove(session);
+                        }
                     };
                     lock (_lock)
+                    {
                         _sessions.Add(session);
+                    }
+
                     session.PreKeyExchange += (s, e) => PreKeyExchange?.Invoke(s, e);
                     try
                     {
@@ -164,17 +181,5 @@ namespace FxSsh
             if (_isDisposed)
                 throw new ObjectDisposedException(GetType().FullName);
         }
-
-        #region IDisposable
-        public void Dispose()
-        {
-            lock (_lock)
-            {
-                if (_isDisposed)
-                    return;
-                Stop();
-            }
-        }
-        #endregion
     }
 }

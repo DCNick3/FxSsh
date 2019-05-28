@@ -10,7 +10,7 @@ namespace FxSsh.Messages.Userauth
         {
             MethodName = "publickey";
         }
-        
+
         public bool HasSignature { get; set; }
         public string KeyAlgorithmName { get; set; }
         public byte[] PublicKey { get; set; }
@@ -39,7 +39,7 @@ namespace FxSsh.Messages.Userauth
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             base.SerializePacketInternal(writer);
-            
+
             writer.Write(HasSignature);
             writer.Write(KeyAlgorithmName, Encoding.ASCII);
             writer.WriteBinary(PublicKey);

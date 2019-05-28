@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics.Contracts;
+﻿using System.Diagnostics.Contracts;
 using System.Text;
 
 namespace FxSsh.Messages
@@ -27,11 +26,11 @@ namespace FxSsh.Messages
         public string Description { get; private set; }
         public string Language { get; private set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
-            ReasonCode = (DisconnectReason)reader.ReadUInt32();
+            ReasonCode = (DisconnectReason) reader.ReadUInt32();
             Description = reader.ReadString(Encoding.UTF8);
             if (reader.DataAvailable >= 4)
                 Language = reader.ReadString(Encoding.UTF8);
@@ -39,7 +38,7 @@ namespace FxSsh.Messages
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
-            writer.Write((uint)ReasonCode);
+            writer.Write((uint) ReasonCode);
             writer.Write(Description, Encoding.UTF8);
             writer.Write(Language ?? "en", Encoding.UTF8);
         }

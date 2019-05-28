@@ -4,7 +4,8 @@ namespace FxSsh.Services
 {
     public class PtyArgs
     {
-        public PtyArgs(SessionChannel channel, string terminal, uint heightPx, uint heightRows, uint widthPx, uint widthChars, string modes, UserauthArgs userauthArgs)
+        public PtyArgs(SessionChannel channel, string terminal, uint heightPx, uint heightRows, uint widthPx,
+            uint widthChars, string modes, UserauthArgs userauthArgs)
         {
             Contract.Requires(channel != null);
             Contract.Requires(terminal != null);
@@ -22,13 +23,13 @@ namespace FxSsh.Services
             AttachedUserauthArgs = userauthArgs;
         }
 
-        public SessionChannel Channel { get; private set; }
-        public string Terminal { get; private set; }
-        public uint HeightPx { get; private set; }
-        public uint HeightRows { get; private set; }
-        public uint WidthPx { get; private set; }
-        public uint WidthChars { get; private set; }
-        public string Modes { get; private set; }
-        public UserauthArgs AttachedUserauthArgs { get; private set; }
+        public SessionChannel Channel { get; }
+        public string Terminal { get; }
+        public uint HeightPx { get; }
+        public uint HeightRows { get; }
+        public uint WidthPx { get; }
+        public uint WidthChars { get; }
+        public string Modes { get; }
+        public UserauthArgs AttachedUserauthArgs { get; }
     }
 }

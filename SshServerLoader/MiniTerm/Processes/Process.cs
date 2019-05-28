@@ -5,7 +5,7 @@ using static MiniTerm.Native.ProcessApi;
 namespace MiniTerm
 {
     /// <summary>
-    /// Represents an instance of a process.
+    ///     Represents an instance of a process.
     /// </summary>
     internal sealed class Process : IDisposable
     {
@@ -20,9 +20,9 @@ namespace MiniTerm
 
         #region IDisposable Support
 
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue; // To detect redundant calls
 
-        void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
@@ -41,14 +41,8 @@ namespace MiniTerm
                 }
 
                 // Close process and thread handles
-                if (ProcessInfo.hProcess != IntPtr.Zero)
-                {
-                    CloseHandle(ProcessInfo.hProcess);
-                }
-                if (ProcessInfo.hThread != IntPtr.Zero)
-                {
-                    CloseHandle(ProcessInfo.hThread);
-                }
+                if (ProcessInfo.hProcess != IntPtr.Zero) CloseHandle(ProcessInfo.hProcess);
+                if (ProcessInfo.hThread != IntPtr.Zero) CloseHandle(ProcessInfo.hThread);
 
                 disposedValue = true;
             }

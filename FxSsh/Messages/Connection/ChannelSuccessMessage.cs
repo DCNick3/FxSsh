@@ -1,5 +1,4 @@
-﻿
-namespace FxSsh.Messages.Connection
+﻿namespace FxSsh.Messages.Connection
 {
     [Message("SSH_MSG_CHANNEL_SUCCESS", MessageNumber)]
     public class ChannelSuccessMessage : ConnectionServiceMessage
@@ -8,7 +7,7 @@ namespace FxSsh.Messages.Connection
 
         public uint RecipientChannel { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {

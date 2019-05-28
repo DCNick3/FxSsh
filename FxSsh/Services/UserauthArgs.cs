@@ -29,13 +29,13 @@ namespace FxSsh.Services
             Session = session;
         }
 
-        public string AuthMethod { get; private set; }
-        public Session Session { get; private set; }
-        public string Username { get; private set; }
-        public string Password { get; private set; }
-        public string KeyAlgorithm { get; private set; }
-        public string Fingerprint { get; private set; }
-        public byte[] Key { get; private set; }
+        public string AuthMethod { get; }
+        public Session Session { get; }
+        public string Username { get; }
+        public string Password { get; }
+        public string KeyAlgorithm { get; }
+        public string Fingerprint { get; }
+        public byte[] Key { get; }
         public bool Result { get; set; }
     }
 }

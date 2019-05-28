@@ -16,13 +16,14 @@ namespace FxSsh.Algorithms
             algorithm.KeySize = keySize;
             KeySize = algorithm.KeySize;
             BlockSize = algorithm.BlockSize;
-            Cipher = (key, vi, isEncryption) => new EncryptionAlgorithm(algorithm, keySize, mode, key, vi, isEncryption);
+            Cipher = (key, vi, isEncryption) =>
+                new EncryptionAlgorithm(algorithm, keySize, mode, key, vi, isEncryption);
         }
 
-        public int KeySize { get; private set; }
+        public int KeySize { get; }
 
-        public int BlockSize { get; private set; }
+        public int BlockSize { get; }
 
-        public Func<byte[], byte[], bool, EncryptionAlgorithm> Cipher { get; private set; }
+        public Func<byte[], byte[], bool, EncryptionAlgorithm> Cipher { get; }
     }
 }

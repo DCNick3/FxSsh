@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Text;
-
-namespace FxSsh.Services
+﻿namespace FxSsh.Services
 {
     public class KeyExchangeArgs
     {
         public KeyExchangeArgs(Session s)
         {
-            this.Session = s;
+            Session = s;
         }
 
-        public Session Session { get; private set; }
+        public Session Session { get; }
 
         public byte[] Cookie { get; private set; }
 

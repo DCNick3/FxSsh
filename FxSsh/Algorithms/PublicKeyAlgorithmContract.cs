@@ -4,13 +4,9 @@ using System.Diagnostics.Contracts;
 namespace FxSsh.Algorithms
 {
     [ContractClassFor(typeof(PublicKeyAlgorithm))]
-    abstract class PublicKeyAlgorithmContract : PublicKeyAlgorithm
+    internal abstract class PublicKeyAlgorithmContract : PublicKeyAlgorithm
     {
-
-        public override string Name
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public override string Name => throw new NotImplementedException();
 
         public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {

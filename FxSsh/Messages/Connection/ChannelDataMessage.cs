@@ -1,5 +1,4 @@
-﻿
-namespace FxSsh.Messages.Connection
+﻿namespace FxSsh.Messages.Connection
 {
     [Message("SSH_MSG_CHANNEL_DATA", MessageNumber)]
     public class ChannelDataMessage : ConnectionServiceMessage
@@ -9,7 +8,7 @@ namespace FxSsh.Messages.Connection
         public uint RecipientChannel { get; set; }
         public byte[] Data { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

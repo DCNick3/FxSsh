@@ -18,9 +18,9 @@ namespace FxSsh
             ServerBanner = serverBanner;
         }
 
-        public IPAddress LocalAddress { get; private set; }
-        public int Port { get; private set; }
+        public IPAddress LocalAddress { get; }
+        public int Port { get; }
 
-        public string ServerBanner { get; private set; }
+        public string ServerBanner { get; }
     }
 }

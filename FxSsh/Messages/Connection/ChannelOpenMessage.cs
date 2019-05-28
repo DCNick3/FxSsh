@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 
 namespace FxSsh.Messages.Connection
 {
@@ -13,7 +12,7 @@ namespace FxSsh.Messages.Connection
         public uint InitialWindowSize { get; private set; }
         public uint MaximumPacketSize { get; private set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

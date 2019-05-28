@@ -7,7 +7,7 @@ namespace FxSsh.Messages.Userauth
         public const byte MessageNumber = 60;
 
         public override byte MessageType => MessageNumber;
-        
+
         public string Prompt { get; set; }
         public string LanguageTag { get; set; }
 

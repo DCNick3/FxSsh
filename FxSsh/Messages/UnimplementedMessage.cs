@@ -4,10 +4,10 @@
     public class UnimplementedMessage : Message
     {
         public const byte MessageNumber = 3;
-        
+
         public uint SequenceNumber { get; set; }
-        
-        public override byte MessageType { get { return MessageNumber; } }
+
+        public override byte MessageType => MessageNumber;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {

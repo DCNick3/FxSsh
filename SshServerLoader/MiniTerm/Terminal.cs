@@ -1,24 +1,22 @@
-﻿using Microsoft.Win32.SafeHandles;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace MiniTerm
 {
     /// <summary>
-    /// The UI of the terminal. It's just a normal console window, but we're managing the input/output.
-    /// In a "real" project this could be some other UI.
+    ///     The UI of the terminal. It's just a normal console window, but we're managing the input/output.
+    ///     In a "real" project this could be some other UI.
     /// </summary>
     public sealed class Terminal : IDisposable
     {
-        private PseudoConsolePipe inputPipe;
-        private PseudoConsolePipe outputPipe;
-        private PseudoConsole pseudoConsole;
-        private Process process;
-        private FileStream writer;
-        private FileStream reader;
+        private readonly PseudoConsolePipe inputPipe;
+        private readonly PseudoConsolePipe outputPipe;
+        private readonly Process process;
+        private readonly PseudoConsole pseudoConsole;
+        private readonly FileStream reader;
+        private readonly FileStream writer;
 
         public Terminal(string command, int windowWidth, int windowHeight)
         {
@@ -30,12 +28,17 @@ namespace MiniTerm
             reader = new FileStream(outputPipe.ReadSide, FileAccess.Read);
         }
 
+        public void Dispose()
+        {
+            DisposeResources(reader, writer, process, pseudoConsole, outputPipe, inputPipe);
+        }
+
         public event EventHandler<byte[]> DataReceived;
         public event EventHandler<uint> CloseReceived;
 
         /// <summary>
-        /// Start the psuedoconsole and run the process as shown in 
-        /// https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session#creating-the-pseudoconsole
+        ///     Start the psuedoconsole and run the process as shown in
+        ///     https://docs.microsoft.com/en-us/windows/console/creating-a-pseudoconsole-session#creating-the-pseudoconsole
         /// </summary>
         public void Run()
         {
@@ -52,6 +55,7 @@ namespace MiniTerm
                         break;
                     DataReceived?.Invoke(this, buf.Take(length).ToArray());
                 }
+
                 CloseReceived?.Invoke(this, 0);
             });
         }
@@ -70,15 +74,7 @@ namespace MiniTerm
 
         private void DisposeResources(params IDisposable[] disposables)
         {
-            foreach (var disposable in disposables)
-            {
-                disposable.Dispose();
-            }
-        }
-
-        public void Dispose()
-        {
-            DisposeResources(reader, writer, process, pseudoConsole, outputPipe, inputPipe);
+            foreach (var disposable in disposables) disposable.Dispose();
         }
     }
 }

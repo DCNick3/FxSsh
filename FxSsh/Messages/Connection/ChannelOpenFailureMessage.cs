@@ -12,12 +12,12 @@ namespace FxSsh.Messages.Connection
         public string Description { get; set; }
         public string Language { get; set; }
 
-        public override byte MessageType { get { return MessageNumber; } }
+        public override byte MessageType => MessageNumber;
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(RecipientChannel);
-            writer.Write((uint)ReasonCode);
+            writer.Write((uint) ReasonCode);
             writer.Write(Description, Encoding.ASCII);
             writer.Write(Language ?? "en", Encoding.ASCII);
         }

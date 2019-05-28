@@ -14,8 +14,8 @@ namespace FxSsh.Algorithms
             Hmac = key => new HmacAlgorithm(algorithm, keySize, key);
         }
 
-        public int KeySize { get; private set; }
+        public int KeySize { get; }
 
-        public Func<byte[], HmacAlgorithm> Hmac { get; private set; }
+        public Func<byte[], HmacAlgorithm> Hmac { get; }
     }
 }

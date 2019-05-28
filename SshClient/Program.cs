@@ -1,17 +1,15 @@
-﻿using System;
-using System.Net.Sockets;
-using FxSsh;
+﻿using System.Net.Sockets;
 
 namespace FxSsh
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            Socket s = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            var s = new Socket(SocketType.Stream, ProtocolType.Tcp);
             s.Connect("localhost", 2222);
-            
-            ClientSession session = new ClientSession(s, "SSH-2.0-magic");
+
+            var session = new ClientSession(s, "SSH-2.0-magic");
 
             session.EstablishConnection();
         }

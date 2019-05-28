@@ -4,12 +4,12 @@ namespace FxSsh.Messages.Connection
 {
     public class PtyRequestMessage : ChannelRequestMessage
     {
-        public string Terminal = "";
-        public uint widthChars = 0;
-        public uint heightRows = 0;
-        public uint widthPx = 0;
-        public uint heightPx = 0;
+        public uint heightPx;
+        public uint heightRows;
         public string modes = "";
+        public string Terminal = "";
+        public uint widthChars;
+        public uint widthPx;
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
