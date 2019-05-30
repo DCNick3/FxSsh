@@ -98,8 +98,8 @@ namespace FxSsh.Services
 
                     using (var worker = new SshDataWorker())
                     {
-                        worker.WriteBinary(_session.SessionId);
-                        worker.Write(message.PayloadWithoutSignature);
+                        worker.Write(_session.SessionId);
+                        worker.WriteRawBytes(message.PayloadWithoutSignature);
 
                         verified = keyAlg.VerifyData(worker.ToByteArray(), sig);
                     }

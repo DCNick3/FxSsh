@@ -63,7 +63,7 @@ namespace FxSsh.Messages
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
-            writer.Write(Cookie);
+            writer.WriteRawBytes(Cookie);
             writer.Write(string.Join(",", KeyExchangeAlgorithms), Encoding.ASCII);
             writer.Write(string.Join(",", ServerHostKeyAlgorithms), Encoding.ASCII);
             writer.Write(string.Join(",", EncryptionAlgorithmsClientToServer), Encoding.ASCII);

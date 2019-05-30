@@ -60,7 +60,7 @@ namespace FxSsh
             Contract.Requires(encoding != null);
 
             var bytes = encoding.GetBytes(str);
-            WriteBinary(bytes);
+            Write(bytes);
         }
 
         public void WriteMpint(byte[] data)
@@ -69,7 +69,7 @@ namespace FxSsh
 
             if (data.Length == 1 && data[0] == 0)
             {
-                Write(new byte[4]);
+                WriteRawBytes(new byte[4]);
             }
             else
             {
@@ -79,24 +79,24 @@ namespace FxSsh
                 {
                     Write(length + 1);
                     Write(0);
-                    Write(data);
+                    WriteRawBytes(data);
                 }
                 else
                 {
                     Write(length);
-                    Write(data);
+                    WriteRawBytes(data);
                 }
             }
         }
 
-        public void Write(byte[] data)
+        public void WriteRawBytes(byte[] data)
         {
             Contract.Requires(data != null);
 
             _ms.Write(data, 0, data.Length);
         }
 
-        public void WriteBinary(byte[] buffer)
+        public void Write(byte[] buffer)
         {
             Contract.Requires(buffer != null);
 
@@ -104,7 +104,7 @@ namespace FxSsh
             _ms.Write(buffer, 0, buffer.Length);
         }
 
-        public void WriteBinary(byte[] buffer, int offset, int count)
+        public void Write(byte[] buffer, int offset, int count)
         {
             Contract.Requires(buffer != null);
 

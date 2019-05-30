@@ -21,7 +21,7 @@ namespace FxSsh.Messages.Userauth
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(KeyAlgorithmName, Encoding.ASCII);
-            writer.WriteBinary(PublicKey);
+            writer.Write(PublicKey);
         }
     }
 }

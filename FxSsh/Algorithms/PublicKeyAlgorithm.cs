@@ -52,7 +52,7 @@ namespace FxSsh.Algorithms
                 var signature = SignData(data);
 
                 worker.Write(Name, Encoding.ASCII);
-                worker.WriteBinary(signature);
+                worker.Write(signature);
 
                 return worker.ToByteArray();
             }

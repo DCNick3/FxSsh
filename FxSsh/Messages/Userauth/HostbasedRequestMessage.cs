@@ -40,12 +40,12 @@ namespace FxSsh.Messages.Userauth
             base.SerializePacketInternal(writer);
 
             writer.Write(PublicKeyAlgorithm, Encoding.ASCII);
-            writer.WriteBinary(KeyAndCertificatesData);
+            writer.Write(KeyAndCertificatesData);
             writer.Write(ClientName, Encoding.ASCII);
             writer.Write(HostUsername, Encoding.UTF8);
 
             if (Signature != null) // For ease of signing
-                writer.WriteBinary(Signature);
+                writer.Write(Signature);
         }
     }
 }

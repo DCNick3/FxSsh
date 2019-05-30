@@ -19,7 +19,7 @@
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(RecipientChannel);
-            writer.WriteBinary(Data);
+            writer.Write(Data);
         }
     }
 }

@@ -423,8 +423,8 @@ namespace FxSsh
             {
                 worker.Write(packetLength);
                 worker.Write(paddingLength);
-                worker.Write(payload);
-                worker.Write(padding);
+                worker.WriteRawBytes(payload);
+                worker.WriteRawBytes(padding);
 
                 payload = worker.ToByteArray();
             }
@@ -688,9 +688,9 @@ namespace FxSsh
                     worker.Write(RemoteVersion, Encoding.ASCII);
                 }
 
-                worker.WriteBinary(_exchangeContext.ClientKexInitPayload);
-                worker.WriteBinary(_exchangeContext.ServerKexInitPayload);
-                worker.WriteBinary(hostKeyAndCerts);
+                worker.Write(_exchangeContext.ClientKexInitPayload);
+                worker.Write(_exchangeContext.ServerKexInitPayload);
+                worker.Write(hostKeyAndCerts);
                 worker.WriteMpint(clientExchangeValue);
                 worker.WriteMpint(serverExchangeValue);
                 worker.WriteMpint(sharedSecret);
@@ -712,16 +712,16 @@ namespace FxSsh
                 using (var worker = new SshDataWorker())
                 {
                     worker.WriteMpint(sharedSecret);
-                    worker.Write(exchangeHash);
+                    worker.WriteRawBytes(exchangeHash);
 
                     if (currentHash == null)
                     {
                         worker.Write((byte) letter);
-                        worker.Write(SessionId);
+                        worker.WriteRawBytes(SessionId);
                     }
                     else
                     {
-                        worker.Write(currentHash);
+                        worker.WriteRawBytes(currentHash);
                     }
 
                     currentHash = kexAlg.ComputeHash(worker.ToByteArray());
@@ -741,7 +741,7 @@ namespace FxSsh
             using (var worker = new SshDataWorker())
             {
                 worker.Write(seq);
-                worker.Write(payload);
+                worker.WriteRawBytes(payload);
 
                 return alg.ComputeHash(worker.ToByteArray());
             }

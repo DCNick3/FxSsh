@@ -59,7 +59,7 @@ namespace FxSsh.Algorithms
             using (var worker = new SshDataWorker())
             {
                 worker.Write(Name, Encoding.ASCII);
-                worker.WriteBinary(_publicKey.Export(KeyBlobFormat.RawPublicKey));
+                worker.Write(_publicKey.Export(KeyBlobFormat.RawPublicKey));
 
                 return worker.ToByteArray();
             }

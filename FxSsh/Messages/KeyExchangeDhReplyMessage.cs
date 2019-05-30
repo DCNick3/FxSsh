@@ -20,9 +20,9 @@
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
-            writer.WriteBinary(HostKey);
+            writer.Write(HostKey);
             writer.WriteMpint(F);
-            writer.WriteBinary(Signature);
+            writer.Write(Signature);
         }
     }
 }

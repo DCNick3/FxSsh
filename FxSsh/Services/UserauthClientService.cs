@@ -71,8 +71,8 @@ namespace FxSsh.Services
 
                 using (var worker = new SshDataWorker())
                 {
-                    worker.WriteBinary(_session.SessionId);
-                    worker.Write(request.SerializePacket());
+                    worker.Write(_session.SessionId);
+                    worker.WriteRawBytes(request.SerializePacket());
 
                     request.Signature = hostbased.hostKey.CreateSignatureData(worker.ToByteArray());
                 }
@@ -145,8 +145,8 @@ namespace FxSsh.Services
 
             using (var worker = new SshDataWorker())
             {
-                worker.WriteBinary(_session.SessionId);
-                worker.Write(request.SerializePacket());
+                worker.Write(_session.SessionId);
+                worker.WriteRawBytes(request.SerializePacket());
 
                 request.Signature = key.CreateSignatureData(worker.ToByteArray());
             }

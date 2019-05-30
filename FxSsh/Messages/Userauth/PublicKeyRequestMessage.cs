@@ -42,10 +42,10 @@ namespace FxSsh.Messages.Userauth
 
             writer.Write(HasSignature);
             writer.Write(KeyAlgorithmName, Encoding.ASCII);
-            writer.WriteBinary(PublicKey);
+            writer.Write(PublicKey);
 
             if (HasSignature && Signature != null) // For ease of signing
-                writer.WriteBinary(Signature);
+                writer.Write(Signature);
         }
     }
 }
