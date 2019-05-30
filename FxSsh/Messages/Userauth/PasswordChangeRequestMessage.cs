@@ -2,7 +2,7 @@ using System.Text;
 
 namespace FxSsh.Messages.Userauth
 {
-    public class PasswordChangeRequestMessage : Message
+    public class PasswordChangeRequestMessage : UserauthServiceMessage
     {
         public const byte MessageNumber = 60;
 
@@ -20,7 +20,7 @@ namespace FxSsh.Messages.Userauth
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(Prompt, Encoding.UTF8);
-            writer.Write(LanguageTag, Encoding.ASCII);
+            writer.Write(LanguageTag ?? "en", Encoding.ASCII);
         }
     }
 }

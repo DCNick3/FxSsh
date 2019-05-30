@@ -44,7 +44,7 @@ namespace FxSsh.Messages.Userauth
             writer.Write(KeyAlgorithmName, Encoding.ASCII);
             writer.WriteBinary(PublicKey);
 
-            if (HasSignature)
+            if (HasSignature && Signature != null) // For ease of signing
                 writer.WriteBinary(Signature);
         }
     }

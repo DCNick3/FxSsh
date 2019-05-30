@@ -43,7 +43,7 @@ namespace FxSsh.Algorithms
             return this;
         }
 
-        public override byte[] ExportCspBlob()
+        public override byte[] ExportInternalBlob()
         {
             if (_privateKey == null)
                 GenerateKey();

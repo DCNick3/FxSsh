@@ -30,7 +30,7 @@ namespace FxSsh
             Contract.Requires(type != null);
 
             var alg = GetKeyAlgorithm(type);
-            var bytes = alg.ExportCspBlob();
+            var bytes = alg.ExportInternalBlob();
             return Convert.ToBase64String(bytes);
         }
     }

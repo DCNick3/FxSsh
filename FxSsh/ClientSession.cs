@@ -1,13 +1,18 @@
 using System;
 using System.Net.Sockets;
 using FxSsh.Messages;
+using FxSsh.Services;
 
 namespace FxSsh
 {
     public class ClientSession : Session
     {
-        public ClientSession(Socket socket, string programVersion) : base(socket, programVersion)
+        private readonly ClientAuthParameters _authParameters;
+
+        public ClientSession(Socket socket, string programVersion, ClientAuthParameters authParameters) : base(socket,
+            programVersion)
         {
+            _authParameters = authParameters;
         }
 
         public override SessionRole Role => SessionRole.Client;
@@ -83,10 +88,19 @@ namespace FxSsh
             };
 
             SendMessage(new NewKeysMessage());
+
             SendMessage(new ServiceRequestMessage
             {
-                ServiceName = "ssh-connection"
+                ServiceName = "ssh-userauth"
             });
+        }
+
+        private void HandleMessage(ServiceAcceptMessage message)
+        {
+            if (message.ServiceName == "ssh-userauth")
+                RegisterService(new UserauthClientService(_authParameters, this));
+            else
+                throw new SshConnectionException("Unknown service accepted", DisconnectReason.ProtocolError);
         }
 
         #endregion

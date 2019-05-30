@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -49,7 +49,7 @@ namespace FxSsh
 #else
         private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 #endif
-        protected readonly List<SshService> _services = new List<SshService>();
+        protected readonly List<ISshService> _services = new List<ISshService>();
 
         private uint _outboundPacketSequence;
         private uint _inboundPacketSequence;
@@ -61,12 +61,14 @@ namespace FxSsh
         private readonly ConcurrentQueue<Message> _blockedMessages = new ConcurrentQueue<Message>();
         private readonly EventWaitHandle _hasBlockedMessagesWaitHandle = new ManualResetEvent(true);
 
+        public event EventHandler<ISshService> ServiceRegistered;
+
         public abstract SessionRole Role { get; }
         public string LocalVersion { get; }
         public string RemoteVersion { get; private set; }
         public byte[] SessionId { get; protected set; }
 
-        public T GetService<T>() where T : SshService
+        public T GetService<T>() where T : ISshService
         {
             return (T) _services.FirstOrDefault(x => x is T);
         }
@@ -627,6 +629,12 @@ namespace FxSsh
             _hasBlockedMessagesWaitHandle.Set();
         }
 
+        protected void HandleMessage(UserauthServiceMessage message)
+        {
+            var service = GetService<UserauthService>();
+            service?.HandleMessageCore(message);
+        }
+
         protected void HandleMessage(UnimplementedMessage message)
         {
         }
@@ -634,6 +642,13 @@ namespace FxSsh
         #endregion
 
         protected abstract void DoExchange();
+
+        internal void RegisterService(ISshService service)
+        {
+            ServiceRegistered?.Invoke(this, service);
+
+            _services.Add(service);
+        }
 
         private string ChooseAlgorithm(string[] localAlgorithms, string[] remoteAlgorithms)
         {

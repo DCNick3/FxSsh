@@ -15,7 +15,7 @@ namespace FxSsh.Algorithms
             return this;
         }
 
-        public override byte[] ExportCspBlob()
+        public override byte[] ExportInternalBlob()
         {
             return _algorithm.ExportCspBlob(true);
         }

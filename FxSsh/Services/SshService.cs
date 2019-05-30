@@ -1,18 +1,10 @@
-﻿using System.Diagnostics.Contracts;
+﻿using FxSsh.Messages;
 
 namespace FxSsh.Services
 {
-    public abstract class SshService
+    public interface ISshService
     {
-        protected internal readonly ServerSession _session;
-
-        public SshService(ServerSession session)
-        {
-            Contract.Requires(session != null);
-
-            _session = session;
-        }
-
-        protected internal abstract void CloseService();
+        void HandleMessageCore(Message message);
+        void CloseService();
     }
 }

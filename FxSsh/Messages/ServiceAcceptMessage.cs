@@ -7,6 +7,10 @@ namespace FxSsh.Messages
     {
         public const byte MessageNumber = 6;
 
+        public ServiceAcceptMessage()
+        {
+        }
+
         public ServiceAcceptMessage(string name)
         {
             ServiceName = name;

@@ -23,9 +23,9 @@ namespace SshServerLoader
             {
                 // This looks ugly. User should have more convenient way to do this
                 e.EncryptionAlgorithmsClientToServer = e.EncryptionAlgorithmsClientToServer
-                    .Where(_ => !_.StartsWith("aes128")).ToArray();
+                    .Where(_ => !_.StartsWith("aes128") && !_.StartsWith("3des")).ToArray();
                 e.EncryptionAlgorithmsServerToClient = e.EncryptionAlgorithmsServerToClient
-                    .Where(_ => !_.StartsWith("aes128")).ToArray();
+                    .Where(_ => !_.StartsWith("aes128") && !_.StartsWith("3des")).ToArray();
 
                 e.MacAlgorithmsClientToServer = e.MacAlgorithmsClientToServer.Where(_ => _ != "hmac-md5").ToArray();
                 e.MacAlgorithmsServerToClient = e.MacAlgorithmsServerToClient.Where(_ => _ != "hmac-md5").ToArray();
@@ -56,16 +56,15 @@ namespace SshServerLoader
                 Console.WriteLine("Key exchange algorithm: {0}", keyExchangeAlg);
         }
 
-        private static void e_ServiceRegistered(object sender, SshService e)
+        private static void e_ServiceRegistered(object sender, ISshService e)
         {
             var session = (Session) sender;
             Console.WriteLine("Session {0} requesting {1}.",
                 BitConverter.ToString(session.SessionId).Replace("-", ""), e.GetType().Name);
 
-            if (e is UserauthService)
+            if (e is UserauthServerService userauthServerService)
             {
-                var service = (UserauthService) e;
-                service.Userauth += service_Userauth;
+                userauthServerService.CheckAuthData += ServiceCheckAuthData;
             }
             else if (e is ConnectionService)
             {
@@ -106,7 +105,7 @@ namespace SshServerLoader
             Console.WriteLine("Received environment variable {0}:{1}", e.Name, e.Value);
         }
 
-        private static void service_Userauth(object sender, UserauthArgs e)
+        private static void ServiceCheckAuthData(object sender, UserauthArgs e)
         {
             Console.WriteLine("Client {0} fingerprint: {1}.", e.KeyAlgorithm, e.Fingerprint);
 

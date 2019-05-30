@@ -8,28 +8,24 @@ using FxSsh.Messages.Connection;
 
 namespace FxSsh.Services
 {
-    public class ConnectionService : SshService, IDynamicInvoker
+    public class ConnectionService : ISshService, IDynamicInvoker
     {
         private readonly UserauthArgs _auth;
         private readonly List<Channel> _channels = new List<Channel>();
         private readonly object _locker = new object();
+        protected internal readonly ServerSession _session;
 
         private int _serverChannelCounter = -1;
 
         public ConnectionService(ServerSession session, UserauthArgs auth)
-            : base(session)
         {
             Contract.Requires(auth != null);
 
+            _session = session;
             _auth = auth;
         }
 
-        public event EventHandler<CommandRequestedArgs> CommandOpened;
-        public event EventHandler<EnvironmentArgs> EnvReceived;
-        public event EventHandler<PtyArgs> PtyReceived;
-        public event EventHandler<TcpRequestArgs> TcpForwardRequest;
-
-        protected internal override void CloseService()
+        public void CloseService()
         {
             lock (_locker)
             {
@@ -38,12 +34,17 @@ namespace FxSsh.Services
             }
         }
 
-        internal void HandleMessageCore(ConnectionServiceMessage message)
+        public void HandleMessageCore(Message message)
         {
             Contract.Requires(message != null);
 
-            this.InvokeHandleMessage(message);
+            this.InvokeHandleMessage((ConnectionServiceMessage) message);
         }
+
+        public event EventHandler<CommandRequestedArgs> CommandOpened;
+        public event EventHandler<EnvironmentArgs> EnvReceived;
+        public event EventHandler<PtyArgs> PtyReceived;
+        public event EventHandler<TcpRequestArgs> TcpForwardRequest;
 
         private void HandleMessage(ChannelOpenMessage message)
         {

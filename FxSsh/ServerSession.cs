@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -20,8 +19,6 @@ namespace FxSsh
 
         public override SessionRole Role => SessionRole.Server;
 
-        public event EventHandler<SshService> ServiceRegistered;
-
         protected override KeyExchangeInitMessage LoadKexInitMessage()
         {
             var m = base.LoadKexInitMessage();
@@ -29,16 +26,16 @@ namespace FxSsh
             return m;
         }
 
-        internal SshService RegisterService(string serviceName, UserauthArgs auth = null)
+        internal ISshService RegisterService(string serviceName, UserauthArgs auth = null)
         {
             Contract.Requires(serviceName != null);
 
-            SshService service = null;
+            ISshService service = null;
             switch (serviceName)
             {
                 case "ssh-userauth":
                     if (GetService<UserauthService>() == null)
-                        service = new UserauthService(this);
+                        service = new UserauthServerService(this);
                     break;
                 case "ssh-connection":
                     if (auth != null && GetService<ConnectionService>() == null)
@@ -46,13 +43,7 @@ namespace FxSsh
                     break;
             }
 
-            if (service != null)
-            {
-                if (ServiceRegistered != null)
-                    ServiceRegistered(this, service);
-
-                _services.Add(service);
-            }
+            if (service != null) RegisterService(service);
 
             return service;
         }
@@ -132,12 +123,6 @@ namespace FxSsh
 
             throw new SshConnectionException(string.Format("Service \"{0}\" not available.", message.ServiceName),
                 DisconnectReason.ServiceNotAvailable);
-        }
-
-        protected void HandleMessage(UserauthServiceMessage message)
-        {
-            var service = GetService<UserauthService>();
-            service?.HandleMessageCore(message);
         }
 
         protected void HandleMessage(ConnectionServiceMessage message)

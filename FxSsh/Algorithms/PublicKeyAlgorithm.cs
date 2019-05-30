@@ -62,7 +62,7 @@ namespace FxSsh.Algorithms
 
         public abstract PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data);
 
-        public abstract byte[] ExportCspBlob();
+        public abstract byte[] ExportInternalBlob();
 
         public abstract byte[] ExportKeyAndCertificatesData();
 
