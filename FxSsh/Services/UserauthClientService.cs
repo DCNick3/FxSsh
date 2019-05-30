@@ -9,9 +9,13 @@ namespace FxSsh.Services
     public class UserauthClientService : UserauthService
     {
         private readonly ClientAuthParameters _authParameters;
-        private readonly bool _hostbasedUsed = false;
         private readonly ClientSession _session;
         private readonly List<PublicKeyAlgorithm> _unusedKeys;
+        private bool _hostbasedUsed = false;
+        private bool _passwordUsed = false;
+        private string _lastPassword;
+
+        private IReadOnlyList<string> _authorizationMethodsThatCanContinue;
 
         public UserauthClientService(ClientAuthParameters authParameters, ClientSession session) : base(session)
         {
@@ -19,6 +23,7 @@ namespace FxSsh.Services
             _session = session;
             _unusedKeys = _authParameters.UserKeys.ToList();
 
+            _currentAuthMethod = "none";
             _session.SendMessage(new RequestMessage
             {
                 MethodName = "none",
@@ -27,9 +32,9 @@ namespace FxSsh.Services
             });
         }
 
-        protected void HandleMessage(FailureMessage message)
+        private void ContinueAuth()
         {
-            if (message.AuthorizationMethodsThatCanContinue.Contains("publickey") && _unusedKeys.Count > 0)
+            if (_authorizationMethodsThatCanContinue.Contains("publickey") && _unusedKeys.Count > 0)
             {
                 _currentAuthMethod = "publickey";
                 var key = _unusedKeys.First();
@@ -46,19 +51,71 @@ namespace FxSsh.Services
                 return;
             }
 
-            if (message.AuthorizationMethodsThatCanContinue.Contains("hostbased") && !_hostbasedUsed &&
+            if (_authorizationMethodsThatCanContinue.Contains("hostbased") && !_hostbasedUsed &&
                 _authParameters.HostAuth != null)
+            {
                 _currentAuthMethod = "hostbased";
+                _hostbasedUsed = true;
 
-            //return;
+                var hostbased = _authParameters.HostAuth.Value;
 
-            if (message.AuthorizationMethodsThatCanContinue.Contains("password") &&
+                var request = new HostbasedRequestMessage
+                {
+                    Username = _authParameters.Username,
+                    ServiceName = _authParameters.ServiceName,
+                    ClientName = hostbased.hostname,
+                    HostUsername = hostbased.username,
+                    PublicKeyAlgorithm = hostbased.hostKey.Name,
+                    KeyAndCertificatesData = hostbased.hostKey.ExportKeyAndCertificatesData(),
+                };
+
+                using (var worker = new SshDataWorker())
+                {
+                    worker.WriteBinary(_session.SessionId);
+                    worker.Write(request.SerializePacket());
+
+                    request.Signature = hostbased.hostKey.CreateSignatureData(worker.ToByteArray());
+                }
+                
+                _session.SendMessage(request);
+                return;
+            }
+
+            if (_authorizationMethodsThatCanContinue.Contains("password") && !_passwordUsed &&
                 _authParameters.PasswordAuthHandler != null)
+            {
                 _currentAuthMethod = "password";
+                
+                if (!_authParameters.PasswordAuthHandler.IsRetryable())
+                    _passwordUsed = true;
 
-            //return;
+                _lastPassword = _authParameters.PasswordAuthHandler.GetPassword();
+                
+                _session.SendMessage(new PasswordRequestMessage
+                {
+                    Password = _lastPassword,
+                    Username = _authParameters.Username,
+                    ServiceName = _authParameters.ServiceName,
+                    IsPasswordUpdate = false
+                });
+                
+                return;
+            }
 
-            throw new SshConnectionException("No auth methods available", DisconnectReason.NoMoreAuthMethodsAvailable);
+            throw new SshConnectionException("No more auth methods available", DisconnectReason.NoMoreAuthMethodsAvailable);
+        }
+        
+        protected void HandleMessage(FailureMessage message)
+        {
+            _authorizationMethodsThatCanContinue = message.AuthorizationMethodsThatCanContinue;
+
+            if (_currentAuthMethod == "password")
+            {
+                // Well, this is not shred, but best I can do
+                _lastPassword = null;
+            }
+            
+            ContinueAuth();
         }
 
         protected void HandleMessage(PublicKeyOkMessage message)
@@ -86,19 +143,46 @@ namespace FxSsh.Services
                 HasSignature = true
             };
 
-            var worker = new SshDataWorker();
-            worker.WriteBinary(_session.SessionId);
-            worker.Write(request.SerializePacket());
+            using (var worker = new SshDataWorker())
+            {
+                worker.WriteBinary(_session.SessionId);
+                worker.Write(request.SerializePacket());
 
-            request.Signature = key.CreateSignatureData(worker.ToByteArray());
+                request.Signature = key.CreateSignatureData(worker.ToByteArray());
+            }
 
             _session.SendMessage(request);
         }
 
+        protected void HandleMessage(PasswordChangeRequestMessage message)
+        {
+            var newPassword = _authParameters.PasswordAuthHandler.ChangePassword(message.Prompt, message.LanguageTag);
+
+            if (newPassword == null)
+            {
+                _passwordUsed = true;
+                ContinueAuth();
+            }
+
+            var oldPassword = _lastPassword ?? _authParameters.PasswordAuthHandler.GetPassword();
+            
+            _session.SendMessage(new PasswordRequestMessage
+            {
+                Username = _authParameters.Username,
+                ServiceName = _authParameters.ServiceName,
+                IsPasswordUpdate = true,
+                Password = oldPassword,
+                NewPassword = newPassword
+            });
+        }
+
         protected void HandleMessage(SuccessMessage message)
         {
+            _lastPassword = null;
+            
             if (_authParameters.ServiceName == "ssh-connection")
             {
+                Console.WriteLine("Auth succeed. Further stuff is not implemented yet.");
                 // YAY!!
                 // TODO: Register a ConnectionClientService
             }
@@ -138,5 +222,8 @@ namespace FxSsh.Services
 
     public interface IPasswordAuthHandler
     {
+        bool IsRetryable();
+        string GetPassword();
+        string ChangePassword(string prompt, string language);
     }
 }
