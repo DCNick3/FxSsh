@@ -1,0 +1,153 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using FxSsh.Algorithms;
+using FxSsh.Messages.Userauth;
+
+namespace FxSsh.Services.Userauth
+{
+    public abstract class PublicKeyUserauthMethod : IUserauthMethod
+    {
+        public const string MethodName = "publickey";
+        
+        public string GetName() => MethodName;
+
+        public IReadOnlyDictionary<byte, Type> UsedMessageTypes() =>
+            new Dictionary<byte, Type>
+            {
+                { PublicKeyOkMessage.MessageNumber, typeof(PublicKeyOkMessage) }
+            };
+        public Type RequestType() => typeof(PublicKeyRequestMessage);
+        public abstract bool IsUsable();
+    }
+
+    public class PublicKeyUserauthClientMethod : PublicKeyUserauthMethod, IUserauthClientMethod
+    {
+        private readonly PublicKeyAlgorithm _key;
+        private ClientSession _session;
+        private string _username;
+        private string _serviceName;
+        private bool _used;
+
+        public PublicKeyUserauthClientMethod(PublicKeyAlgorithm key)
+        {
+            _key = key;
+        }
+        
+        public override bool IsUsable() => !_used;
+
+        public void Configure(ClientSession session, string username, string serviceName)
+        {
+            _session = session;
+            _username = username;
+            _serviceName = serviceName;
+        }
+
+        public void InitiateAuth()
+        {
+            _used = true;
+            _session.SendMessage(new PublicKeyRequestMessage
+            {
+                Username = _username,
+                ServiceName = _serviceName,
+                KeyAlgorithmName = _key.Name,
+                PublicKey = _key.ExportKeyAndCertificatesData(),
+                HasSignature = false,
+            });
+        }
+
+        private void HandleMessage(PublicKeyOkMessage message)
+        {
+            if (!message.PublicKey.SequenceEqual(_key.ExportKeyAndCertificatesData()))
+                throw new SshConnectionException("Server accepted not the offered key", DisconnectReason.ProtocolError);
+            
+            
+            var request = new PublicKeyRequestMessage
+            {
+                Username = _username,
+                ServiceName = _serviceName,
+                KeyAlgorithmName = _key.Name,
+                PublicKey = _key.ExportKeyAndCertificatesData(),
+                HasSignature = true
+            };
+
+            using (var worker = new SshDataWorker())
+            {
+                worker.Write(_session.SessionId);
+                worker.WriteRawBytes(request.SerializePacket());
+
+                request.Signature = _key.CreateSignatureData(worker.ToByteArray());
+            }
+
+            _session.SendMessage(request);
+        }
+    }
+
+    public class PublicKeyUserauthServerMethod : PublicKeyUserauthMethod, IUserauthServerMethod
+    {
+        private Func<(string username, string serviceName, PublicKeyAlgorithm), bool> _authCallback;
+        private ServerSession _session;
+        private Action<AuthInfo> _succeed;
+        private Action<AuthInfo> _failed;
+        
+        public PublicKeyUserauthServerMethod(Func<(string username, string serviceName, PublicKeyAlgorithm), bool> authCallback)
+        {
+            _authCallback = authCallback;
+        }
+        
+        public override bool IsUsable()
+        {
+            return true;
+        }
+
+        public void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<AuthInfo> failedCallback)
+        {
+            _session = session;
+            _succeed = succeedCallback;
+            _failed = failedCallback;
+        }
+
+        private void HandleMessage(PublicKeyRequestMessage message)
+        {
+            var args = new AuthInfo
+            {
+                Service = message.ServiceName,
+                Username = message.Username,
+                AuthMethod = MethodName
+            };
+            
+            var key = Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);
+            var valid = _authCallback((message.Username, message.ServiceName, key));
+
+            if (!valid)
+            {
+                _failed(args);
+                return;
+            }
+
+            if (!message.HasSignature)
+            {
+                _session.SendMessage(new PublicKeyOkMessage
+                {
+                    KeyAlgorithmName = message.KeyAlgorithmName,
+                    PublicKey = message.PublicKey
+                });
+            }
+            else
+            {
+                using (var worker = new SshDataWorker())
+                {
+                    worker.Write(_session.SessionId);
+                    worker.WriteRawBytes(message.PayloadWithoutSignature);
+
+                    valid = key.VerifyData(worker.ToByteArray(), key.GetSignature(message.Signature));
+                }
+                
+                if (valid)
+                    _succeed(args);
+                else
+                    _failed(args);
+            }
+        }
+    }
+}

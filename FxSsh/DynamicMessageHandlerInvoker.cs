@@ -6,12 +6,12 @@ using FxSsh.Messages;
 
 namespace FxSsh
 {
-    public static class DynamicInvoker
+    public static class DynamicMessageHandlerInvoker
     {
-        private static readonly Dictionary<string, Action<IDynamicInvoker, Message>> _cache =
-            new Dictionary<string, Action<IDynamicInvoker, Message>>();
+        private static readonly Dictionary<string, Action<IMessageHandler, Message>> _cache =
+            new Dictionary<string, Action<IMessageHandler, Message>>();
 
-        public static void InvokeHandleMessage(this IDynamicInvoker instance, Message message)
+        public static void InvokeHandleMessage(this IMessageHandler instance, Message message)
         {
             var instype = instance.GetType();
             var msgtype = message.GetType();
@@ -26,13 +26,13 @@ namespace FxSsh
                         null,
                         new[] {message.GetType()},
                         null);
-                var insparam = Expression.Parameter(typeof(IDynamicInvoker));
+                var insparam = Expression.Parameter(typeof(IMessageHandler));
                 var msgparam = Expression.Parameter(typeof(Message));
                 var call = Expression.Call(
                     Expression.Convert(insparam, instype),
                     method,
                     Expression.Convert(msgparam, msgtype));
-                action = Expression.Lambda<Action<IDynamicInvoker, Message>>(call, insparam, msgparam).Compile();
+                action = Expression.Lambda<Action<IMessageHandler, Message>>(call, insparam, msgparam).Compile();
                 _cache[key] = action;
             }
 
@@ -40,7 +40,7 @@ namespace FxSsh
         }
     }
 
-    public interface IDynamicInvoker
+    public interface IMessageHandler
     {
     }
 }

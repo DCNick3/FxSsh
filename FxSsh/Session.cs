@@ -11,10 +11,11 @@ using System.Threading;
 using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh
 {
-    public abstract class Session : IDynamicInvoker
+    public abstract class Session : IMessageHandler
     {
         private const byte CarriageReturn = 0x0d;
         private const byte LineFeed = 0x0a;

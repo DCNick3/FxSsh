@@ -4,17 +4,21 @@ using System.Linq;
 using System.Net.Sockets;
 using FxSsh.Messages;
 using FxSsh.Services;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh
 {
     public class ServerSession : Session
     {
-        private readonly Dictionary<string, byte[]> _hostKey;
+        private readonly IReadOnlyDictionary<string, byte[]> _hostKey;
+        private readonly IReadOnlyDictionary<string, ISshServerServiceFactory> _serviceFactories;
 
-        public ServerSession(Socket socket, Dictionary<string, byte[]> hostKey, string programVersion) : base(socket,
-            programVersion)
+        public ServerSession(Socket socket, IReadOnlyDictionary<string, byte[]> hostKey,
+            IReadOnlyDictionary<string, ISshServerServiceFactory> serviceFactories, string programVersion) : base(
+            socket, programVersion)
         {
-            _hostKey = hostKey.ToDictionary(s => s.Key, s => s.Value);
+            _hostKey = hostKey;
+            _serviceFactories = serviceFactories;
         }
 
         public override SessionRole Role => SessionRole.Server;
@@ -26,26 +30,21 @@ namespace FxSsh
             return m;
         }
 
-        internal ISshService RegisterService(string serviceName, UserauthArgs auth = null)
+        internal ISshService RegisterService(string serviceName, AuthInfo auth = null)
         {
             Contract.Requires(serviceName != null);
 
-            ISshService service = null;
-            switch (serviceName)
+            if (_serviceFactories.TryGetValue(serviceName, out var factory))
             {
-                case "ssh-userauth":
-                    if (GetService<UserauthService>() == null)
-                        service = new UserauthServerService(this);
-                    break;
-                case "ssh-connection":
-                    if (auth != null && GetService<ConnectionService>() == null)
-                        service = new ConnectionService(this, auth);
-                    break;
+                var service = factory.CreateService(this, auth);
+
+                if (service != null)
+                    RegisterService(service);
+
+                return service;
             }
 
-            if (service != null) RegisterService(service);
-
-            return service;
+            return null;
         }
 
         protected override void DoExchange()

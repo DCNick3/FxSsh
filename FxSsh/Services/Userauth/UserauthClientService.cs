@@ -1,39 +1,44 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FxSsh.Algorithms;
 using FxSsh.Messages.Userauth;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Userauth
 {
-    public class UserauthClientService : UserauthService
+    public sealed class UserauthClientService : UserauthService
     {
         private readonly ClientAuthParameters _authParameters;
         private readonly ClientSession _session;
-        private readonly List<PublicKeyAlgorithm> _unusedKeys;
-        private bool _hostbasedUsed = false;
-        private bool _passwordUsed = false;
-        private string _lastPassword;
 
-        private IReadOnlyList<string> _authorizationMethodsThatCanContinue;
+        private IReadOnlyList<IUserauthClientMethod> _authorizationMethodsThatCanContinue;
 
         public UserauthClientService(ClientAuthParameters authParameters, ClientSession session) : base(session)
         {
             _authParameters = authParameters;
             _session = session;
-            _unusedKeys = _authParameters.UserKeys.ToList();
 
-            _currentAuthMethod = "none";
-            _session.SendMessage(new RequestMessage
-            {
-                MethodName = "none",
-                Username = authParameters.Username,
-                ServiceName = authParameters.ServiceName
-            });
+            foreach (var method in _authParameters.Methods)
+                method.Configure(_session, _authParameters.Username, _authParameters.ServiceName);
+
+            var noneMethod = new NoneUserauthClientMethod();
+            noneMethod.Configure(_session, _authParameters.Username, _authParameters.ServiceName);
+            _authorizationMethodsThatCanContinue = new[] {noneMethod};
+            ContinueAuth();
+        }
+
+        protected override void UseUserauthMethod(IUserauthMethod method)
+        {
+            var clientMethod = method as IUserauthClientMethod;
+            if (method != null && clientMethod == null)
+                throw new ArgumentOutOfRangeException(nameof(method));
+            base.UseUserauthMethod(method);
+            
+            clientMethod?.InitiateAuth();
         }
 
         private void ContinueAuth()
         {
+            /*
             if (_authorizationMethodsThatCanContinue.Contains("publickey") && _unusedKeys.Count > 0)
             {
                 _currentAuthMethod = "publickey";
@@ -101,60 +106,27 @@ namespace FxSsh.Services
                 
                 return;
             }
+            */
 
-            throw new SshConnectionException("No more auth methods available", DisconnectReason.NoMoreAuthMethodsAvailable);
-        }
-        
-        protected void HandleMessage(FailureMessage message)
-        {
-            _authorizationMethodsThatCanContinue = message.AuthorizationMethodsThatCanContinue;
-
-            if (_currentAuthMethod == "password")
+            if (_authorizationMethodsThatCanContinue.Count > 0)
             {
-                // Well, this is not shred, but best I can do
-                _lastPassword = null;
+                var method = _authorizationMethodsThatCanContinue.First();
+                UseUserauthMethod(method);
             }
-            
+            else
+                throw new SshConnectionException("No more auth methods available", DisconnectReason.NoMoreAuthMethodsAvailable);
+        }
+
+        private void HandleMessage(FailureMessage message)
+        {
+            var allowedNames = new HashSet<string>(message.AuthorizationMethodsThatCanContinue);
+            _authorizationMethodsThatCanContinue = _authParameters.Methods
+                .Where(_ => allowedNames.Contains(_.GetName()) && _.IsUsable()).ToArray();
+
             ContinueAuth();
         }
-
-        protected void HandleMessage(PublicKeyOkMessage message)
-        {
-            var publicKey = message.PublicKey;
-            var algorithmName = message.KeyAlgorithmName;
-
-            PublicKeyAlgorithm key = null;
-            foreach (var userKey in _authParameters.UserKeys)
-                if (userKey.Name == algorithmName && userKey.ExportKeyAndCertificatesData().SequenceEqual(publicKey))
-                {
-                    key = userKey;
-                    break;
-                }
-
-            if (key == null)
-                throw new SshConnectionException("Server accepted nonexistent key", DisconnectReason.ProtocolError);
-
-            var request = new PublicKeyRequestMessage
-            {
-                Username = _authParameters.Username,
-                ServiceName = _authParameters.ServiceName,
-                KeyAlgorithmName = key.Name,
-                PublicKey = key.ExportKeyAndCertificatesData(),
-                HasSignature = true
-            };
-
-            using (var worker = new SshDataWorker())
-            {
-                worker.Write(_session.SessionId);
-                worker.WriteRawBytes(request.SerializePacket());
-
-                request.Signature = key.CreateSignatureData(worker.ToByteArray());
-            }
-
-            _session.SendMessage(request);
-        }
-
-        protected void HandleMessage(PasswordChangeRequestMessage message)
+/*
+        private void HandleMessage(PasswordChangeRequestMessage message)
         {
             var newPassword = _authParameters.PasswordAuthHandler.ChangePassword(message.Prompt, message.LanguageTag);
 
@@ -175,11 +147,9 @@ namespace FxSsh.Services
                 NewPassword = newPassword
             });
         }
-
-        protected void HandleMessage(SuccessMessage message)
+*/
+        private void HandleMessage(SuccessMessage message)
         {
-            _lastPassword = null;
-            
             if (_authParameters.ServiceName == "ssh-connection")
             {
                 Console.WriteLine("Auth succeed. Further stuff is not implemented yet.");
@@ -187,12 +157,10 @@ namespace FxSsh.Services
                 // TODO: Register a ConnectionClientService
             }
             else
-            {
                 throw new SshConnectionException("Unknown service accepted", DisconnectReason.ProtocolError);
-            }
         }
 
-        protected void HandleMessage(BannerMessage message)
+        private void HandleMessage(BannerMessage message)
         {
             _authParameters.OnBanner?.Invoke(this, new OnBannerEventArgs
             {
@@ -200,30 +168,5 @@ namespace FxSsh.Services
                 Language = message.Language
             });
         }
-    }
-
-    public class ClientAuthParameters
-    {
-        public string Username { get; set; }
-        public string ServiceName { get; set; }
-        public IReadOnlyList<PublicKeyAlgorithm> UserKeys { get; set; }
-        public IPasswordAuthHandler PasswordAuthHandler { get; set; }
-
-        public (string hostname, string username, PublicKeyAlgorithm hostKey)? HostAuth { get; set; }
-
-        public EventHandler<OnBannerEventArgs> OnBanner { get; set; }
-    }
-
-    public class OnBannerEventArgs
-    {
-        public string Message { get; set; }
-        public string Language { get; set; }
-    }
-
-    public interface IPasswordAuthHandler
-    {
-        bool IsRetryable();
-        string GetPassword();
-        string ChangePassword(string prompt, string language);
     }
 }

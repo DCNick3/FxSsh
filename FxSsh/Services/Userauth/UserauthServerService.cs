@@ -1,50 +1,72 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FxSsh.Messages;
 using FxSsh.Messages.Userauth;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Userauth
 {
-    public class UserauthServerService : UserauthService
+    public sealed class UserauthServerService : UserauthService
     {
         // This should be generalized to allow multistage auth too
-        private readonly string[] _allowedMethods = {"publickey", "password"};
+        private readonly Dictionary<string, IUserauthServerMethod> _allowedMethods;
         private readonly ServerSession _session;
 
+        private IReadOnlyList<string> AuthorizationMethodsThatCanContinue => _allowedMethods.Values
+            .Where(_ => _.IsUsable())
+            .Select(_ => _.GetName()).ToArray();
 
-        public UserauthServerService(ServerSession session) : base(session)
+        public UserauthServerService(ServerSession session, IEnumerable<IUserauthServerMethod> allowedMethods) : base(session)
         {
             _session = session;
-        }
-
-        public event EventHandler<UserauthArgs> CheckAuthData;
-        public event EventHandler<string> Succeed;
-
-        protected void HandleMessage(RequestMessage message)
-        {
-            _currentAuthMethod = message.MethodName;
-            switch (message.MethodName)
+            _allowedMethods = allowedMethods.ToDictionary(_ => _.GetName());
+            
+            foreach (var method in _allowedMethods.Values)
             {
-                case "publickey":
-                    var keyMsg = Message.LoadFrom<PublicKeyRequestMessage>(message);
-                    HandleMessage(keyMsg);
-                    break;
-                case "password":
-                    var pswdMsg = Message.LoadFrom<PasswordRequestMessage>(message);
-                    HandleMessage(pswdMsg);
-                    break;
-                case "hostbased":
-                case "none":
-                default:
-                    _session.SendMessage(new FailureMessage
-                    {
-                        AuthorizationMethodsThatCanContinue = _allowedMethods,
-                        PartialSuccess = false
-                    });
-                    break;
+                method.Configure(_session, AuthMethodSucceed, AuthMethodFailed);
+            }
+        }
+        
+        public event EventHandler<AuthInfo> Succeed;
+        public event EventHandler<AuthInfo> Failed;
+
+        private void HandleMessage(RequestMessage message)
+        {
+            if (_allowedMethods.TryGetValue(message.MethodName, out var method) && method.IsUsable())
+            {
+                var requestMessage = Message.LoadFrom(message, method.RequestType());
+                method.InvokeHandleMessage(requestMessage);
+            }
+            else
+            {
+                _session.SendMessage(new FailureMessage
+                {
+                    PartialSuccess = false,
+                    AuthorizationMethodsThatCanContinue = AuthorizationMethodsThatCanContinue
+                });
             }
         }
 
-        protected void HandleMessage(PasswordRequestMessage message)
+        // TODO: add support for multi-stage auth
+        private void AuthMethodSucceed(AuthInfo args)
+        {
+            Succeed?.Invoke(this, args);
+            _session.SendMessage(new SuccessMessage());
+            _session.RegisterService(args.Service, args);
+        }
+
+        private void AuthMethodFailed(AuthInfo args)
+        {
+            Failed?.Invoke(this, args);
+            _session.SendMessage(new FailureMessage
+            {
+                PartialSuccess = false,
+                AuthorizationMethodsThatCanContinue = AuthorizationMethodsThatCanContinue
+            });
+        }
+
+        /*
+        private void HandleMessage(PasswordRequestMessage message)
         {
             var verified = false;
 
@@ -71,7 +93,7 @@ namespace FxSsh.Services
             }
         }
 
-        protected void HandleMessage(PublicKeyRequestMessage message)
+        private void HandleMessage(PublicKeyRequestMessage message)
         {
             if (Session._publicKeyAlgorithms.ContainsKey(message.KeyAlgorithmName))
             {
@@ -119,5 +141,6 @@ namespace FxSsh.Services
                 PartialSuccess = false
             });
         }
+        */
     }
 }

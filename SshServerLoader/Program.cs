@@ -4,7 +4,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using FxSsh;
+using FxSsh.Algorithms;
 using FxSsh.Services;
+using FxSsh.Services.Userauth;
 using MiniTerm;
 
 namespace SshServerLoader
@@ -19,6 +21,12 @@ namespace SshServerLoader
             //server.AddHostKey("ssh-rsa", "BwIAAACkAABSU0EyAAQAAAEAAQADKjiW5UyIad8ITutLjcdtejF4wPA1dk1JFHesDMEhU9pGUUs+HPTmSn67ar3UvVj/1t/+YK01FzMtgq4GHKzQHHl2+N+onWK4qbIAMgC6vIcs8u3d38f3NFUfX+lMnngeyxzbYITtDeVVXcLnFd7NgaOcouQyGzYrHBPbyEivswsnqcnF4JpUTln29E1mqt0a49GL8kZtDfNrdRSt/opeexhCuzSjLPuwzTPc6fKgMc6q4MBDBk53vrFY2LtGALrpg3tuydh3RbMLcrVyTNT+7st37goubQ2xWGgkLvo+TZqu3yutxr1oLSaPMSmf9bTACMi5QDicB3CaWNe9eU73MzhXaFLpNpBpLfIuhUaZ3COlMazs7H9LCJMXEL95V6ydnATf7tyO0O+jQp7hgYJdRLR3kNAKT0HU8enE9ZbQEXG88hSCbpf1PvFUytb1QBcotDy6bQ6vTtEAZV+XwnUGwFRexERWuu9XD6eVkYjA4Y3PGtSXbsvhwgH0mTlBOuH4soy8MV4dxGkxM8fIMM0NISTYrPvCeyozSq+NDkekXztFau7zdVEYmhCqIjeMNmRGuiEo8ppJYj4CvR1hc8xScUIw7N4OnLISeAdptm97ADxZqWWFZHno7j7rbNsq5ysdx08OtplghFPx4vNHlS09LwdStumtUel5oIEVMYv+yWBYSPPZBcVY5YFyZFJzd0AOkVtUbEbLuzRs5AtKZG01Ip/8+pZQvJvdbBMLT1BUvHTrccuRbY03SHIaUM3cTUc=");
             //server.AddHostKey("ssh-dss", "BwIAAAAiAABEU1MyAAQAAG+6KQWB+crih2Ivb6CZsMe/7NHLimiTl0ap97KyBoBOs1amqXB8IRwI2h9A10R/v0BHmdyjwe0c0lPsegqDuBUfD2VmsDgrZ/i78t7EJ6Sb6m2lVQfTT0w7FYgVk3J1Deygh7UcbIbDoQ+refeRNM7CjSKtdR+/zIwO3Qub2qH+p6iol2iAlh0LP+cw+XlH0LW5YKPqOXOLgMIiO+48HZjvV67pn5LDubxru3ZQLvjOcDY0pqi5g7AJ3wkLq5dezzDOOun72E42uUHTXOzo+Ct6OZXFP53ZzOfjNw0SiL66353c9igBiRMTGn2gZ+au0jMeIaSsQNjQmWD+Lnri39n0gSCXurDaPkec+uaufGSG9tWgGnBdJhUDqwab8P/Ipvo5lS5p6PlzAQAAACqx1Nid0Ea0YAuYPhg+YolsJ/ce");
             server.AddHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=");
+            
+            server.AddUserauthService(new []
+            {
+                new PublicKeyUserauthServerMethod(CheckPublicKey), 
+            });
+            
             server.PreKeyExchange += (s, e) =>
             {
                 // This looks ugly. User should have more convenient way to do this
@@ -64,7 +72,7 @@ namespace SshServerLoader
 
             if (e is UserauthServerService userauthServerService)
             {
-                userauthServerService.CheckAuthData += ServiceCheckAuthData;
+                //userauthServerService.CheckAuthData += ServiceCheckAuthData;
             }
             else if (e is ConnectionService)
             {
@@ -105,11 +113,17 @@ namespace SshServerLoader
             Console.WriteLine("Received environment variable {0}:{1}", e.Name, e.Value);
         }
 
-        private static void ServiceCheckAuthData(object sender, UserauthArgs e)
+        private static bool CheckPublicKey((string username, string serviceName, PublicKeyAlgorithm key) args)
         {
-            Console.WriteLine("Client {0} fingerprint: {1}.", e.KeyAlgorithm, e.Fingerprint);
+            var (username, serviceName, key) = args;
+            
+            Console.WriteLine($"User {username} with key {key.GetFingerprint("sha256")} wants {serviceName}");
+            
+            return true;
 
-            e.Result = true;
+            //Console.WriteLine("Client {0} fingerprint: {1}.", e.KeyAlgorithm, e.Fingerprint);
+
+            //e.Result = true;
         }
 
         private static void service_CommandOpened(object sender, CommandRequestedArgs e)

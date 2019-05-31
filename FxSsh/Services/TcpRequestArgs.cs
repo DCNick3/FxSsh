@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics.Contracts;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh.Services
 {
     public class TcpRequestArgs
     {
         public TcpRequestArgs(SessionChannel channel, string host, int port, string originatorIP, int originatorPort,
-            UserauthArgs userauthArgs)
+            AuthInfo authInfo)
         {
             Contract.Requires(channel != null);
             Contract.Requires(host != null);
@@ -16,7 +17,7 @@ namespace FxSsh.Services
             Port = port;
             OriginatorIP = originatorIP;
             OriginatorPort = originatorPort;
-            AttachedUserauthArgs = userauthArgs;
+            AttachedAuthInfo = authInfo;
         }
 
         public SessionChannel Channel { get; }
@@ -24,6 +25,6 @@ namespace FxSsh.Services
         public int Port { get; }
         public string OriginatorIP { get; }
         public int OriginatorPort { get; }
-        public UserauthArgs AttachedUserauthArgs { get; }
+        public AuthInfo AttachedAuthInfo { get; }
     }
 }

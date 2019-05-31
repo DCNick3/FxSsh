@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
+using FxSsh.Messages.Userauth;
 
 namespace FxSsh.Messages
 {
@@ -19,7 +20,8 @@ namespace FxSsh.Messages
         }
 
         public abstract byte MessageType { get; }
-
+        public Group MessageGroup => GetGroup(MessageType);
+        
         protected byte[] RawBytes { get; set; }
 
         public void LoadPacket(byte[] bytes)
@@ -58,6 +60,13 @@ namespace FxSsh.Messages
             return msg;
         }
 
+        public static Message LoadFrom(RequestMessage message, Type type)
+        {
+            var msg = (Message)Activator.CreateInstance(type);
+            msg.LoadPacket(message.RawBytes);
+            return msg;
+        }
+
         protected virtual void LoadPacketInternal(SshDataWorker reader)
         {
             Contract.Requires(reader != null);
@@ -71,7 +80,7 @@ namespace FxSsh.Messages
 
             throw new NotSupportedException();
         }
-
+        
         public static Group GetGroup(byte number)
         {
             switch (number)

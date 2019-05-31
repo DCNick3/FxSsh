@@ -1,16 +1,17 @@
 ﻿using System.Diagnostics.Contracts;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh.Services
 {
     public class PtyArgs
     {
         public PtyArgs(SessionChannel channel, string terminal, uint heightPx, uint heightRows, uint widthPx,
-            uint widthChars, string modes, UserauthArgs userauthArgs)
+            uint widthChars, string modes, AuthInfo authInfo)
         {
             Contract.Requires(channel != null);
             Contract.Requires(terminal != null);
             Contract.Requires(modes != null);
-            Contract.Requires(userauthArgs != null);
+            Contract.Requires(authInfo != null);
 
             Channel = channel;
             Terminal = terminal;
@@ -20,7 +21,7 @@ namespace FxSsh.Services
             WidthChars = widthChars;
             Modes = modes;
 
-            AttachedUserauthArgs = userauthArgs;
+            AttachedAuthInfo = authInfo;
         }
 
         public SessionChannel Channel { get; }
@@ -30,6 +31,6 @@ namespace FxSsh.Services
         public uint WidthPx { get; }
         public uint WidthChars { get; }
         public string Modes { get; }
-        public UserauthArgs AttachedUserauthArgs { get; }
+        public AuthInfo AttachedAuthInfo { get; }
     }
 }

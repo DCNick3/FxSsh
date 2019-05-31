@@ -5,19 +5,20 @@ using System.Linq;
 using System.Threading;
 using FxSsh.Messages;
 using FxSsh.Messages.Connection;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh.Services
 {
-    public class ConnectionService : ISshService, IDynamicInvoker
+    public class ConnectionService : ISshService, IMessageHandler
     {
-        private readonly UserauthArgs _auth;
+        private readonly AuthInfo _auth;
         private readonly List<Channel> _channels = new List<Channel>();
         private readonly object _locker = new object();
         protected internal readonly ServerSession _session;
 
         private int _serverChannelCounter = -1;
 
-        public ConnectionService(ServerSession session, UserauthArgs auth)
+        public ConnectionService(ServerSession session, AuthInfo auth)
         {
             Contract.Requires(auth != null);
 

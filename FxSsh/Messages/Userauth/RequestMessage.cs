@@ -5,7 +5,7 @@ namespace FxSsh.Messages.Userauth
     [Message("SSH_MSG_USERAUTH_REQUEST", MessageNumber)]
     public class RequestMessage : UserauthServiceMessage
     {
-        private const byte MessageNumber = 50;
+        public const byte MessageNumber = 50;
 
         public string Username { get; set; }
         public string ServiceName { get; set; }

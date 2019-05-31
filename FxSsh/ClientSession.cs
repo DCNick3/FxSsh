@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 using FxSsh.Messages;
-using FxSsh.Services;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh
 {

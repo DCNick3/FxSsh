@@ -6,16 +6,19 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using FxSsh.Services;
+using FxSsh.Services.Userauth;
 
 namespace FxSsh
 {
     public class SshServer : IDisposable
     {
         private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
+        private readonly Dictionary<string, ISshServerServiceFactory> _serviceFactories =
+            new Dictionary<string, ISshServerServiceFactory>();
         private readonly object _lock = new object();
         private readonly List<Session> _sessions = new List<Session>();
         private bool _isDisposed;
-        private TcpListener _listenser;
+        private TcpListener _listener;
         private bool _started;
 
         public SshServer()
@@ -58,12 +61,12 @@ namespace FxSsh
                 if (_started)
                     throw new InvalidOperationException("The server is already started.");
 
-                _listenser = Equals(StartingInfo.LocalAddress, IPAddress.IPv6Any)
+                _listener = Equals(StartingInfo.LocalAddress, IPAddress.IPv6Any)
                     ? TcpListener.Create(StartingInfo.Port) // dual stack
                     : new TcpListener(StartingInfo.LocalAddress, StartingInfo.Port);
-                _listenser.ExclusiveAddressUse = false;
-                _listenser.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                _listenser.Start();
+                _listener.ExclusiveAddressUse = false;
+                _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                _listener.Start();
                 BeginAcceptSocket();
 
                 _started = true;
@@ -78,7 +81,7 @@ namespace FxSsh
                 if (!_started)
                     throw new InvalidOperationException("The server is not started.");
 
-                _listenser.Stop();
+                _listener.Stop();
 
                 _isDisposed = true;
                 _started = false;
@@ -112,11 +115,21 @@ namespace FxSsh
                 _hostKey.Add(type, key.ToArray());
         }
 
+        public void AddServiceFactory(ISshServerServiceFactory factory)
+        {
+            _serviceFactories.Add(factory.GetServiceName(), factory);
+        }
+
+        public void AddUserauthService(IReadOnlyList<IUserauthServerMethod> methods)
+        {
+            AddServiceFactory(new UserauthSshServerServiceFactory(methods));
+        }
+        
         private void BeginAcceptSocket()
         {
             try
             {
-                _listenser.BeginAcceptSocket(AcceptSocket, null);
+                _listener.BeginAcceptSocket(AcceptSocket, null);
             }
             catch (ObjectDisposedException)
             {
@@ -132,10 +145,10 @@ namespace FxSsh
         {
             try
             {
-                var socket = _listenser.EndAcceptSocket(ar);
+                var socket = _listener.EndAcceptSocket(ar);
                 Task.Run(() =>
                 {
-                    var session = new ServerSession(socket, _hostKey, StartingInfo.ServerBanner);
+                    var session = new ServerSession(socket, _hostKey, _serviceFactories, StartingInfo.ServerBanner);
                     session.Disconnected += (ss, ee) =>
                     {
                         lock (_lock)

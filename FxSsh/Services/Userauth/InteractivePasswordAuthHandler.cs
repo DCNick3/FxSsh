@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Userauth
 {
     public class InteractivePasswordAuthHandler : IPasswordAuthHandler
     {
