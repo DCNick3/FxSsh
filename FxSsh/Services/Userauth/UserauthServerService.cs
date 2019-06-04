@@ -14,7 +14,9 @@ namespace FxSsh.Services.Userauth
 
         private IReadOnlyList<string> AuthorizationMethodsThatCanContinue => _allowedMethods.Values
             .Where(_ => _.Usable)
-            .Select(_ => _.Name).ToArray();
+            .Select(_ => _.Name)
+            .Where(_ => _ != NoneMethod.MethodName) // this is prohibited by RFC
+            .ToArray();
 
         public UserauthServerService(ServerSession session, IEnumerable<ServerMethod> allowedMethods) : base(session)
         {
