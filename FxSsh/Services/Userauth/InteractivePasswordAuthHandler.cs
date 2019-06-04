@@ -3,8 +3,15 @@ using System.Text;
 
 namespace FxSsh.Services.Userauth
 {
-    public class InteractivePasswordAuthHandler : IPasswordAuthHandler
+    public sealed class InteractivePasswordAuthHandler : IPasswordAuthHandler
     {
+        private bool _enableChange = false;
+        
+        public InteractivePasswordAuthHandler(bool enableChange = true)
+        {
+            _enableChange = enableChange;
+        }
+        
         private string ReadPassword()
         {
             var sb = new StringBuilder();
@@ -40,12 +47,17 @@ namespace FxSsh.Services.Userauth
 
         public string ChangePassword(string prompt, string language)
         {
-            if (string.IsNullOrEmpty(prompt))
-                prompt = "Enter new password (will not be echoed):";
-            
-            Console.WriteLine("Server asked you to change password");
-            Console.Write($"{prompt} ");
-            return ReadPassword();
+            if (_enableChange)
+            {
+                if (string.IsNullOrEmpty(prompt))
+                    prompt = "Enter new password (will not be echoed):";
+
+                Console.WriteLine("Server asked you to change password");
+                Console.Write($"{prompt} ");
+                return ReadPassword();
+            }
+
+            return null;
         }
     }
 }

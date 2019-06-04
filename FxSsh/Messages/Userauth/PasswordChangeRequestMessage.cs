@@ -9,18 +9,18 @@ namespace FxSsh.Messages.Userauth
         public override byte MessageType => MessageNumber;
 
         public string Prompt { get; set; }
-        public string LanguageTag { get; set; }
+        public string Language { get; set; }
 
         protected override void LoadPacketInternal(SshDataWorker reader)
         {
             Prompt = reader.ReadString(Encoding.UTF8);
-            LanguageTag = reader.ReadString(Encoding.ASCII);
+            Language = reader.ReadString(Encoding.ASCII);
         }
 
         protected override void SerializePacketInternal(SshDataWorker writer)
         {
             writer.Write(Prompt, Encoding.UTF8);
-            writer.Write(LanguageTag ?? "en", Encoding.ASCII);
+            writer.Write(Language ?? "en", Encoding.ASCII);
         }
     }
 }

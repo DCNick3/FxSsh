@@ -39,23 +39,6 @@ namespace FxSsh.Services.Userauth
         private void ContinueAuth()
         {
             /*
-            if (_authorizationMethodsThatCanContinue.Contains("publickey") && _unusedKeys.Count > 0)
-            {
-                _currentAuthMethod = "publickey";
-                var key = _unusedKeys.First();
-                _unusedKeys.RemoveAt(0);
-
-                _session.SendMessage(new PublicKeyRequestMessage
-                {
-                    Username = _authParameters.Username,
-                    ServiceName = _authParameters.ServiceName,
-                    KeyAlgorithmName = key.Name,
-                    PublicKey = key.ExportKeyAndCertificatesData(),
-                    HasSignature = false
-                });
-                return;
-            }
-
             if (_authorizationMethodsThatCanContinue.Contains("hostbased") && !_hostbasedUsed &&
                 _authParameters.HostAuth != null)
             {
@@ -85,27 +68,6 @@ namespace FxSsh.Services.Userauth
                 _session.SendMessage(request);
                 return;
             }
-
-            if (_authorizationMethodsThatCanContinue.Contains("password") && !_passwordUsed &&
-                _authParameters.PasswordAuthHandler != null)
-            {
-                _currentAuthMethod = "password";
-                
-                if (!_authParameters.PasswordAuthHandler.IsRetryable())
-                    _passwordUsed = true;
-
-                _lastPassword = _authParameters.PasswordAuthHandler.GetPassword();
-                
-                _session.SendMessage(new PasswordRequestMessage
-                {
-                    Password = _lastPassword,
-                    Username = _authParameters.Username,
-                    ServiceName = _authParameters.ServiceName,
-                    IsPasswordUpdate = false
-                });
-                
-                return;
-            }
             */
 
             if (_authorizationMethodsThatCanContinue.Count > 0)
@@ -125,29 +87,7 @@ namespace FxSsh.Services.Userauth
 
             ContinueAuth();
         }
-/*
-        private void HandleMessage(PasswordChangeRequestMessage message)
-        {
-            var newPassword = _authParameters.PasswordAuthHandler.ChangePassword(message.Prompt, message.LanguageTag);
-
-            if (newPassword == null)
-            {
-                _passwordUsed = true;
-                ContinueAuth();
-            }
-
-            var oldPassword = _lastPassword ?? _authParameters.PasswordAuthHandler.GetPassword();
-            
-            _session.SendMessage(new PasswordRequestMessage
-            {
-                Username = _authParameters.Username,
-                ServiceName = _authParameters.ServiceName,
-                IsPasswordUpdate = true,
-                Password = oldPassword,
-                NewPassword = newPassword
-            });
-        }
-*/
+        
         private void HandleMessage(SuccessMessage message)
         {
             if (_authParameters.ServiceName == "ssh-connection")

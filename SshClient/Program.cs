@@ -25,9 +25,10 @@ namespace FxSsh
             {
                 Username = "dcnick3",
                 ServiceName = "ssh-connection",
-                Methods = new []
+                Methods = new IClientMethod[]
                 {
-                    new PublicKeyClientMethod(key), 
+                    //new PublicKeyClientMethod(key), 
+                    PasswordClientMethod.CreateKnownPassword("1234")
                 },
                 OnBanner = (_, a) => Console.WriteLine(a.Message),
             };

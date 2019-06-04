@@ -108,8 +108,7 @@ namespace FxSsh.Services.Userauth
             var args = new AuthInfo
             {
                 Service = message.ServiceName,
-                Username = message.Username,
-                AuthMethod = MethodName
+                Username = message.Username
             };
             
             var key = FxSsh.Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);

@@ -60,8 +60,7 @@ namespace FxSsh.Services.Userauth
             var args = new AuthInfo
             {
                 Service = message.ServiceName,
-                Username = message.Username,
-                AuthMethod = MethodName
+                Username = message.Username
             };
             
             _succeed(args);

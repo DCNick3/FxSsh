@@ -22,9 +22,10 @@ namespace SshServerLoader
             //server.AddHostKey("ssh-dss", "BwIAAAAiAABEU1MyAAQAAG+6KQWB+crih2Ivb6CZsMe/7NHLimiTl0ap97KyBoBOs1amqXB8IRwI2h9A10R/v0BHmdyjwe0c0lPsegqDuBUfD2VmsDgrZ/i78t7EJ6Sb6m2lVQfTT0w7FYgVk3J1Deygh7UcbIbDoQ+refeRNM7CjSKtdR+/zIwO3Qub2qH+p6iol2iAlh0LP+cw+XlH0LW5YKPqOXOLgMIiO+48HZjvV67pn5LDubxru3ZQLvjOcDY0pqi5g7AJ3wkLq5dezzDOOun72E42uUHTXOzo+Ct6OZXFP53ZzOfjNw0SiL66353c9igBiRMTGn2gZ+au0jMeIaSsQNjQmWD+Lnri39n0gSCXurDaPkec+uaufGSG9tWgGnBdJhUDqwab8P/Ipvo5lS5p6PlzAQAAACqx1Nid0Ea0YAuYPhg+YolsJ/ce");
             server.AddHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=");
             
-            server.AddUserauthService(new []
+            server.AddUserauthService(new IServerMethodFactory[]
             {
                 new CallbackPublicKeyServerMethodFactory(CheckPublicKey), 
+                new CallbackPasswordServerMethodFactory(CheckPassword), 
             });
             
             server.PreKeyExchange += (s, e) =>
@@ -119,11 +120,19 @@ namespace SshServerLoader
             
             Console.WriteLine($"User {username} with key {key.GetFingerprint("sha256")} wants {serviceName}");
             
-            return true;
+            return false;
 
             //Console.WriteLine("Client {0} fingerprint: {1}.", e.KeyAlgorithm, e.Fingerprint);
 
             //e.Result = true;
+        }
+        private static bool CheckPassword((ServerSession session, string username, string serviceName, string password) args)
+        {
+            var (session, username, serviceName, password) = args;
+
+            Console.WriteLine($"User {username} with password {password} wants {serviceName}");
+            
+            return true;
         }
 
         private static void service_CommandOpened(object sender, CommandRequestedArgs e)
