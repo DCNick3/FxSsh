@@ -122,7 +122,12 @@ namespace FxSsh
 
         public void AddUserauthService(IReadOnlyList<IServerMethodFactory> methods)
         {
-            AddServiceFactory(new UserauthServerServiceFactory(methods));
+            AddUserauthService(methods, new AnyServerAuthenticator());
+        }
+        
+        public void AddUserauthService(IReadOnlyList<IServerMethodFactory> methods, IServerAuthenticator authenticator)
+        {
+            AddServiceFactory(new UserauthServerServiceFactory(methods, authenticator));
         }
         
         private void BeginAcceptSocket()

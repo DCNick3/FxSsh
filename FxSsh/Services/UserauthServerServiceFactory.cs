@@ -7,15 +7,17 @@ namespace FxSsh.Services
     public class UserauthServerServiceFactory : ISshServerServiceFactory
     {
         private readonly IReadOnlyList<IServerMethodFactory> _methods;
+        private IServerAuthenticator _authenticator;
 
-        public UserauthServerServiceFactory(IReadOnlyList<IServerMethodFactory> methods)
+        public UserauthServerServiceFactory(IReadOnlyList<IServerMethodFactory> methods, IServerAuthenticator authenticator)
         {
             _methods = methods;
+            _authenticator = authenticator;
         }
         
         public ISshService CreateService(ServerSession session, AuthInfo auth)
         {
-            return new UserauthServerService(session, _methods.Select(_ => _.CreateMethod(session)));
+            return new UserauthServerService(session, _methods.Select(_ => _.CreateMethod(session)), _authenticator);
         }
 
         public string GetServiceName()

@@ -11,6 +11,10 @@ namespace FxSsh.Services.Userauth
         // This should be generalized to allow multistage auth too
         private readonly Dictionary<string, ServerMethod> _allowedMethods;
         private readonly ServerSession _session;
+        private readonly IServerAuthenticator _authenticator;
+
+        private string _username = null;
+        private string _service = null;
 
         private IReadOnlyList<string> AuthorizationMethodsThatCanContinue => _allowedMethods.Values
             .Where(_ => _.Usable)
@@ -18,9 +22,11 @@ namespace FxSsh.Services.Userauth
             .Where(_ => _ != NoneMethod.MethodName) // this is prohibited by RFC
             .ToArray();
 
-        public UserauthServerService(ServerSession session, IEnumerable<ServerMethod> allowedMethods) : base(session)
+        public UserauthServerService(ServerSession session, IEnumerable<ServerMethod> allowedMethods,
+            IServerAuthenticator authenticator) : base(session)
         {
             _session = session;
+            _authenticator = authenticator;
             _allowedMethods = allowedMethods.ToDictionary(_ => _.Name);
             
             foreach (var method in _allowedMethods.Values)
@@ -31,10 +37,22 @@ namespace FxSsh.Services.Userauth
         }
         
         public event EventHandler<AuthInfo> Succeed;
-        public event EventHandler<AuthInfo> Failed;
+        public event EventHandler<(AuthInfo auth, bool partial)> Failed;
 
         private void HandleMessage(RequestMessage message)
         {
+            if (_username == null)
+                _username = message.Username;
+            if (_service == null)
+                _service = message.ServiceName;
+            
+            // This is how it's done by openssh
+            // Also, this makes the multi-factor auth less exploitable
+            if (_username != message.Username)
+                throw new SshConnectionException("Username change is prohibited", DisconnectReason.ByApplication);
+            if (_service != message.ServiceName)
+                throw new SshConnectionException("Service name change is prohibited", DisconnectReason.ByApplication);
+            
             if (_allowedMethods.TryGetValue(message.MethodName, out var method) && method.Usable)
             {
                 var requestMessage = Message.LoadFrom(message, method.RequestType);
@@ -50,19 +68,30 @@ namespace FxSsh.Services.Userauth
             }
         }
 
-        // TODO: add support for multi-stage auth
-        private void AuthMethodSucceed(object sender, AuthInfo args)
+        private void AuthMethodSucceed(object sender, AuthInfo auth)
         {
-            Succeed?.Invoke(this, args);
-            _session.SendMessage(new SuccessMessage());
-            _session.RegisterService(args.Service, args);
+            if (_authenticator.CheckAuth(_allowedMethods.Values))
+            {
+                Succeed?.Invoke(this, auth);
+                _session.SendMessage(new SuccessMessage());
+                _session.RegisterService(auth.Service, auth);
+            }
+            else
+            {
+                Failed?.Invoke(this, (auth, true));
+                _session.SendMessage(new FailureMessage
+                {
+                    PartialSuccess = true,
+                    AuthorizationMethodsThatCanContinue = AuthorizationMethodsThatCanContinue
+                });
+            }
         }
 
         private void AuthMethodFailed(object sender, (AuthInfo auth, bool partial) args)
         {
             var (auth, partial) = args;
             
-            Failed?.Invoke(this, auth);
+            Failed?.Invoke(this, args);
             _session.SendMessage(new FailureMessage
             {
                 PartialSuccess = partial,

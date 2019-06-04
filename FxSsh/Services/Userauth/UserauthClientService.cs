@@ -154,7 +154,7 @@ namespace FxSsh.Services.Userauth
             {
                 Console.WriteLine("Auth succeed. Further stuff is not implemented yet.");
                 // YAY!!
-                // TODO: Register a ConnectionClientService
+                // TODO: Register a ConnectionClientService... Should poke the factory probably
             }
             else
                 throw new SshConnectionException("Unknown service accepted", DisconnectReason.ProtocolError);
