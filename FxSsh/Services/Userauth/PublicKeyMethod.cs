@@ -6,7 +6,7 @@ using FxSsh.Messages.Userauth;
 
 namespace FxSsh.Services.Userauth
 {
-    public abstract class PublicKeyUserauthMethod : IUserauthMethod
+    public abstract class PublicKeyMethod : IMethod
     {
         public const string MethodName = "publickey";
         
@@ -21,7 +21,7 @@ namespace FxSsh.Services.Userauth
         public abstract bool IsUsable();
     }
 
-    public class PublicKeyUserauthClientMethod : PublicKeyUserauthMethod, IUserauthClientMethod
+    public class PublicKeyClientMethod : PublicKeyMethod, IClientMethod
     {
         private readonly PublicKeyAlgorithm _key;
         private ClientSession _session;
@@ -29,7 +29,7 @@ namespace FxSsh.Services.Userauth
         private string _serviceName;
         private bool _used;
 
-        public PublicKeyUserauthClientMethod(PublicKeyAlgorithm key)
+        public PublicKeyClientMethod(PublicKeyAlgorithm key)
         {
             _key = key;
         }
@@ -83,31 +83,27 @@ namespace FxSsh.Services.Userauth
         }
     }
 
-    public class PublicKeyUserauthServerMethod : PublicKeyUserauthMethod, IUserauthServerMethod
+    public abstract class PublicKeyServerMethod : PublicKeyMethod, IServerMethod
     {
-        private Func<(string username, string serviceName, PublicKeyAlgorithm), bool> _authCallback;
-        private ServerSession _session;
         private Action<AuthInfo> _succeed;
-        private Action<AuthInfo> _failed;
-        
-        public PublicKeyUserauthServerMethod(Func<(string username, string serviceName, PublicKeyAlgorithm), bool> authCallback)
-        {
-            _authCallback = authCallback;
-        }
-        
+        private Action<(AuthInfo auth, bool partial)> _failed;
+        protected ServerSession Session;
+
         public override bool IsUsable()
         {
             return true;
         }
 
-        public void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<AuthInfo> failedCallback)
+        public void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<(AuthInfo auth, bool partial)> failedCallback)
         {
-            _session = session;
+            Session = session;
             _succeed = succeedCallback;
             _failed = failedCallback;
         }
 
-        private void HandleMessage(PublicKeyRequestMessage message)
+        protected abstract bool CheckKey(string username, string serviceName, PublicKeyAlgorithm key);
+            
+        protected void HandleMessage(PublicKeyRequestMessage message)
         {
             var args = new AuthInfo
             {
@@ -116,18 +112,18 @@ namespace FxSsh.Services.Userauth
                 AuthMethod = MethodName
             };
             
-            var key = Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);
-            var valid = _authCallback((message.Username, message.ServiceName, key));
+            var key = FxSsh.Session._publicKeyAlgorithms[message.KeyAlgorithmName].FromKeyAndCertificatesData(message.PublicKey);
+            var valid = CheckKey(message.Username, message.ServiceName, key);
 
             if (!valid)
             {
-                _failed(args);
+                _failed((args, false));
                 return;
             }
 
             if (!message.HasSignature)
             {
-                _session.SendMessage(new PublicKeyOkMessage
+                Session.SendMessage(new PublicKeyOkMessage
                 {
                     KeyAlgorithmName = message.KeyAlgorithmName,
                     PublicKey = message.PublicKey
@@ -137,16 +133,16 @@ namespace FxSsh.Services.Userauth
             {
                 using (var worker = new SshDataWorker())
                 {
-                    worker.Write(_session.SessionId);
+                    worker.Write(Session.SessionId);
                     worker.WriteRawBytes(message.PayloadWithoutSignature);
 
                     valid = key.VerifyData(worker.ToByteArray(), key.GetSignature(message.Signature));
                 }
-                
+
                 if (valid)
                     _succeed(args);
                 else
-                    _failed(args);
+                    _failed((args, false));
             }
         }
     }

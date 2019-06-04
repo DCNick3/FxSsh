@@ -6,7 +6,7 @@ namespace FxSsh.Messages.Userauth
     {
         public NoneRequest()
         {
-            MethodName = NoneUserauthMethod.MethodName;
+            MethodName = NoneMethod.MethodName;
         }
     }
 }

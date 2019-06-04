@@ -8,7 +8,7 @@ namespace FxSsh.Services.Userauth
     public abstract class UserauthService : ISshService, IMessageHandler
     {
         public const string ServiceName = "ssh-userauth";
-        protected IUserauthMethod CurrentUserauthMethod = null;
+        protected IMethod CurrentMethod = null;
         private IReadOnlyDictionary<byte, Type> _currentMethodSpecificMessages = new Dictionary<byte, Type>();
         private Session _session;
 
@@ -26,16 +26,16 @@ namespace FxSsh.Services.Userauth
             Contract.Requires(message != null);
 
             if (_currentMethodSpecificMessages.ContainsKey(message.MessageType))
-                CurrentUserauthMethod.InvokeHandleMessage(message);
+                CurrentMethod.InvokeHandleMessage(message);
             else
                 this.InvokeHandleMessage((UserauthServiceMessage) message);
         }
 
-        protected virtual void UseUserauthMethod(IUserauthMethod method)
+        protected virtual void UseUserauthMethod(IMethod method)
         {
             // Maybe we should inform _currentUserauthMethod that it is no longer needed? Hmm...
-            CurrentUserauthMethod = method;
-            _currentMethodSpecificMessages = CurrentUserauthMethod?.UsedMessageTypes() ?? new Dictionary<byte, Type>();
+            CurrentMethod = method;
+            _currentMethodSpecificMessages = CurrentMethod?.UsedMessageTypes() ?? new Dictionary<byte, Type>();
         }
 
         public Message CreateMethodSpecificMessage(byte number)

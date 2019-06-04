@@ -24,7 +24,7 @@ namespace SshServerLoader
             
             server.AddUserauthService(new []
             {
-                new PublicKeyUserauthServerMethod(CheckPublicKey), 
+                new CallbackPublicKeyServerMethodFactory(CheckPublicKey), 
             });
             
             server.PreKeyExchange += (s, e) =>
@@ -60,8 +60,8 @@ namespace SshServerLoader
 
         private static void e_KeysExchanged(object sender, KeyExchangeArgs e)
         {
-            foreach (var keyExchangeAlg in e.KeyExchangeAlgorithms)
-                Console.WriteLine("Key exchange algorithm: {0}", keyExchangeAlg);
+            /*foreach (var keyExchangeAlg in e.KeyExchangeAlgorithms)
+                Console.WriteLine("Key exchange algorithm: {0}", keyExchangeAlg);*/
         }
 
         private static void e_ServiceRegistered(object sender, ISshService e)
@@ -113,9 +113,9 @@ namespace SshServerLoader
             Console.WriteLine("Received environment variable {0}:{1}", e.Name, e.Value);
         }
 
-        private static bool CheckPublicKey((string username, string serviceName, PublicKeyAlgorithm key) args)
+        private static bool CheckPublicKey((ServerSession session, string username, string serviceName, PublicKeyAlgorithm key) args)
         {
-            var (username, serviceName, key) = args;
+            var (session, username, serviceName, key) = args;
             
             Console.WriteLine($"User {username} with key {key.GetFingerprint("sha256")} wants {serviceName}");
             

@@ -4,7 +4,7 @@ using FxSsh.Messages.Userauth;
 
 namespace FxSsh.Services.Userauth
 {
-    public abstract class NoneUserauthMethod : IUserauthMethod
+    public abstract class NoneMethod : IMethod
     {
         public const string MethodName = "none";
         
@@ -14,7 +14,7 @@ namespace FxSsh.Services.Userauth
         public abstract bool IsUsable();
     }
 
-    public class NoneUserauthClientMethod : NoneUserauthMethod, IUserauthClientMethod
+    public sealed class NoneClientMethod : NoneMethod, IClientMethod
     {
         private ClientSession _session;
         private string _username;
@@ -42,20 +42,13 @@ namespace FxSsh.Services.Userauth
         public override bool IsUsable() => !_used;
     }
 
-    public class NoneUserauthServerMethod : NoneUserauthMethod, IUserauthServerMethod
+    public sealed class NoneServerMethod : NoneMethod, IServerMethod
     {
-        private readonly bool _allowed;
-        
         private ServerSession _session;
         private Action<AuthInfo> _succeed;
-        private Action<AuthInfo> _failed;
+        private Action<(AuthInfo auth, bool partial)> _failed;
 
-        public NoneUserauthServerMethod(bool allowed = false)
-        {
-            _allowed = allowed;
-        }
-        
-        public void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<AuthInfo> failedCallback)
+        public void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<(AuthInfo auth, bool partial)> failedCallback)
         {
             _session = session;
             _succeed = succeedCallback;
@@ -71,10 +64,7 @@ namespace FxSsh.Services.Userauth
                 AuthMethod = MethodName
             };
             
-            if (_allowed)
-                _succeed(args);
-            else
-                _failed(args);
+            _succeed(args);
         }
 
         public override bool IsUsable() => false;

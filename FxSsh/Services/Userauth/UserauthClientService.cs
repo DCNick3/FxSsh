@@ -10,7 +10,7 @@ namespace FxSsh.Services.Userauth
         private readonly ClientAuthParameters _authParameters;
         private readonly ClientSession _session;
 
-        private IReadOnlyList<IUserauthClientMethod> _authorizationMethodsThatCanContinue;
+        private IReadOnlyList<IClientMethod> _authorizationMethodsThatCanContinue;
 
         public UserauthClientService(ClientAuthParameters authParameters, ClientSession session) : base(session)
         {
@@ -20,15 +20,15 @@ namespace FxSsh.Services.Userauth
             foreach (var method in _authParameters.Methods)
                 method.Configure(_session, _authParameters.Username, _authParameters.ServiceName);
 
-            var noneMethod = new NoneUserauthClientMethod();
+            var noneMethod = new NoneClientMethod();
             noneMethod.Configure(_session, _authParameters.Username, _authParameters.ServiceName);
             _authorizationMethodsThatCanContinue = new[] {noneMethod};
             ContinueAuth();
         }
 
-        protected override void UseUserauthMethod(IUserauthMethod method)
+        protected override void UseUserauthMethod(IMethod method)
         {
-            var clientMethod = method as IUserauthClientMethod;
+            var clientMethod = method as IClientMethod;
             if (method != null && clientMethod == null)
                 throw new ArgumentOutOfRangeException(nameof(method));
             base.UseUserauthMethod(method);

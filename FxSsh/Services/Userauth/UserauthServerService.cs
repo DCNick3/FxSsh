@@ -9,21 +9,22 @@ namespace FxSsh.Services.Userauth
     public sealed class UserauthServerService : UserauthService
     {
         // This should be generalized to allow multistage auth too
-        private readonly Dictionary<string, IUserauthServerMethod> _allowedMethods;
+        private readonly Dictionary<string, ServerMethod> _allowedMethods;
         private readonly ServerSession _session;
 
         private IReadOnlyList<string> AuthorizationMethodsThatCanContinue => _allowedMethods.Values
-            .Where(_ => _.IsUsable())
-            .Select(_ => _.GetName()).ToArray();
+            .Where(_ => _.Usable)
+            .Select(_ => _.Name).ToArray();
 
-        public UserauthServerService(ServerSession session, IEnumerable<IUserauthServerMethod> allowedMethods) : base(session)
+        public UserauthServerService(ServerSession session, IEnumerable<ServerMethod> allowedMethods) : base(session)
         {
             _session = session;
-            _allowedMethods = allowedMethods.ToDictionary(_ => _.GetName());
+            _allowedMethods = allowedMethods.ToDictionary(_ => _.Name);
             
             foreach (var method in _allowedMethods.Values)
             {
-                method.Configure(_session, AuthMethodSucceed, AuthMethodFailed);
+                method.OnFailure += AuthMethodFailed;
+                method.OnSuccess += AuthMethodSucceed;
             }
         }
         
@@ -32,9 +33,9 @@ namespace FxSsh.Services.Userauth
 
         private void HandleMessage(RequestMessage message)
         {
-            if (_allowedMethods.TryGetValue(message.MethodName, out var method) && method.IsUsable())
+            if (_allowedMethods.TryGetValue(message.MethodName, out var method) && method.Usable)
             {
-                var requestMessage = Message.LoadFrom(message, method.RequestType());
+                var requestMessage = Message.LoadFrom(message, method.RequestType);
                 method.InvokeHandleMessage(requestMessage);
             }
             else
@@ -48,19 +49,21 @@ namespace FxSsh.Services.Userauth
         }
 
         // TODO: add support for multi-stage auth
-        private void AuthMethodSucceed(AuthInfo args)
+        private void AuthMethodSucceed(object sender, AuthInfo args)
         {
             Succeed?.Invoke(this, args);
             _session.SendMessage(new SuccessMessage());
             _session.RegisterService(args.Service, args);
         }
 
-        private void AuthMethodFailed(AuthInfo args)
+        private void AuthMethodFailed(object sender, (AuthInfo auth, bool partial) args)
         {
-            Failed?.Invoke(this, args);
+            var (auth, partial) = args;
+            
+            Failed?.Invoke(this, auth);
             _session.SendMessage(new FailureMessage
             {
-                PartialSuccess = false,
+                PartialSuccess = partial,
                 AuthorizationMethodsThatCanContinue = AuthorizationMethodsThatCanContinue
             });
         }

@@ -7,7 +7,7 @@ namespace FxSsh.Services.Userauth
     {
         public string Username { get; set; }
         public string ServiceName { get; set; }
-        public IReadOnlyList<IUserauthClientMethod> Methods { get; set; }
+        public IReadOnlyList<IClientMethod> Methods { get; set; }
         public EventHandler<OnBannerEventArgs> OnBanner { get; set; }
     }
 }

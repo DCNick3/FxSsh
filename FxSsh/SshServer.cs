@@ -120,9 +120,9 @@ namespace FxSsh
             _serviceFactories.Add(factory.GetServiceName(), factory);
         }
 
-        public void AddUserauthService(IReadOnlyList<IUserauthServerMethod> methods)
+        public void AddUserauthService(IReadOnlyList<IServerMethodFactory> methods)
         {
-            AddServiceFactory(new UserauthSshServerServiceFactory(methods));
+            AddServiceFactory(new UserauthServerServiceFactory(methods));
         }
         
         private void BeginAcceptSocket()

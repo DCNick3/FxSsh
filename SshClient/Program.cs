@@ -27,7 +27,7 @@ namespace FxSsh
                 ServiceName = "ssh-connection",
                 Methods = new []
                 {
-                    new PublicKeyUserauthClientMethod(key), 
+                    new PublicKeyClientMethod(key), 
                 },
                 OnBanner = (_, a) => Console.WriteLine(a.Message),
             };

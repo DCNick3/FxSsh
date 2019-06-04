@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace FxSsh.Services.Userauth
 {
-    public interface IUserauthMethod : IMessageHandler
+    public interface IMethod : IMessageHandler
     {
         string GetName();
         IReadOnlyDictionary<byte, Type> UsedMessageTypes();
@@ -11,14 +11,14 @@ namespace FxSsh.Services.Userauth
         bool IsUsable();
     }
 
-    public interface IUserauthClientMethod : IUserauthMethod
+    public interface IClientMethod : IMethod
     {
         void Configure(ClientSession session, string username, string serviceName);
         void InitiateAuth();
     }
 
-    public interface IUserauthServerMethod : IUserauthMethod
+    public interface IServerMethod : IMethod
     {
-        void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<AuthInfo> failedCallback);
+        void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<(AuthInfo auth, bool partial)> failedCallback);
     }
 }
