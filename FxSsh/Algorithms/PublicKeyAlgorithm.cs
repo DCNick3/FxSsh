@@ -10,7 +10,7 @@ namespace FxSsh.Algorithms
     public abstract class PublicKeyAlgorithm
     {
         public abstract string Name { get; }
-
+        public abstract bool PublicOnly { get; }
         public string GetFingerprint(string algo = "md5")
         {
             using (var hash = HashAlgorithm.Create(algo.ToUpper()))

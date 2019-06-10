@@ -10,6 +10,7 @@ namespace FxSsh.Algorithms
         private Key _privateKey;
         private PublicKey _publicKey;
         public override string Name => "ssh-ed25519";
+        public override bool PublicOnly => _privateKey == null;
 
         private void GenerateKey()
         {

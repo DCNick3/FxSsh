@@ -8,6 +8,7 @@ namespace FxSsh.Algorithms
         private readonly DSACryptoServiceProvider _algorithm = new DSACryptoServiceProvider();
 
         public override string Name => "ssh-dss";
+        public override bool PublicOnly => _algorithm.PublicOnly;
 
         public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {

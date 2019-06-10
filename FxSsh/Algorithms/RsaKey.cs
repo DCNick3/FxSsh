@@ -8,6 +8,7 @@ namespace FxSsh.Algorithms
         private readonly RSACryptoServiceProvider _algorithm = new RSACryptoServiceProvider();
 
         public override string Name => "ssh-rsa";
+        public override bool PublicOnly => _algorithm.PublicOnly;
 
         public override PublicKeyAlgorithm ImportInternalBlob(byte[] bytes)
         {
