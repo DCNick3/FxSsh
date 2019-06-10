@@ -21,7 +21,7 @@ namespace FxSsh
                 case "ssh-ed25519":
                     return new Ed25519Key();
                 default:
-                    throw new ArgumentOutOfRangeException("type");
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
@@ -32,6 +32,12 @@ namespace FxSsh
             var alg = GetKeyAlgorithm(type);
             var bytes = alg.ExportInternalBlob();
             return Convert.ToBase64String(bytes);
+        }
+
+        public static void EnsureHasPrivate(this PublicKeyAlgorithm algorithm)
+        {
+            if (algorithm.PublicOnly)
+                throw new ArgumentOutOfRangeException(nameof(algorithm), "must have private key");
         }
     }
 }

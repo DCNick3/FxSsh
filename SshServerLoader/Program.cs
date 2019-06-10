@@ -22,10 +22,12 @@ namespace SshServerLoader
             //server.AddHostKey("ssh-dss", "BwIAAAAiAABEU1MyAAQAAG+6KQWB+crih2Ivb6CZsMe/7NHLimiTl0ap97KyBoBOs1amqXB8IRwI2h9A10R/v0BHmdyjwe0c0lPsegqDuBUfD2VmsDgrZ/i78t7EJ6Sb6m2lVQfTT0w7FYgVk3J1Deygh7UcbIbDoQ+refeRNM7CjSKtdR+/zIwO3Qub2qH+p6iol2iAlh0LP+cw+XlH0LW5YKPqOXOLgMIiO+48HZjvV67pn5LDubxru3ZQLvjOcDY0pqi5g7AJ3wkLq5dezzDOOun72E42uUHTXOzo+Ct6OZXFP53ZzOfjNw0SiL66353c9igBiRMTGn2gZ+au0jMeIaSsQNjQmWD+Lnri39n0gSCXurDaPkec+uaufGSG9tWgGnBdJhUDqwab8P/Ipvo5lS5p6PlzAQAAACqx1Nid0Ea0YAuYPhg+YolsJ/ce");
             server.AddHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=");
             
+            // TODO: split the SshServer and SshServerBuilder
             server.AddUserauthService(new IServerMethodFactory[]
             {
                 new CallbackPublicKeyServerMethodFactory(CheckPublicKey), 
                 new CallbackPasswordServerMethodFactory(CheckPassword), 
+                new CallbackHostbasedServerMethodFactory(CheckHostbased), 
             });
             
             server.PreKeyExchange += (s, e) =>
@@ -50,6 +52,7 @@ namespace SshServerLoader
 
             Task.Delay(-1).Wait();
         }
+
 
         private static void server_ConnectionAccepted(object sender, ServerSession e)
         {
@@ -132,6 +135,15 @@ namespace SshServerLoader
 
             Console.WriteLine($"User {username} with password {password} wants {serviceName}");
             
+            return true;
+        }
+        private static bool CheckHostbased((ServerSession sesion, string username, string serviceName, string hostname, string hostUsername, PublicKeyAlgorithm key) arg)
+        {
+            var (session, username, serviceName, hostname, hostUsername, key) = arg;
+            
+            Console.WriteLine(
+                $"User ${username} from ${hostUsername}@${hostname} wih key ${key.GetFingerprint()} wants ${serviceName}");
+
             return true;
         }
 

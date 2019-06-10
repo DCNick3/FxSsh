@@ -31,6 +31,8 @@ namespace FxSsh.Services.Userauth
 
         public PublicKeyClientMethod(PublicKeyAlgorithm key)
         {
+            key.EnsureHasPrivate();
+            
             _key = key;
         }
         
