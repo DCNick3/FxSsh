@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using FxSsh.Services;
-using FxSsh.Services.Userauth.Server;
 using FxSsh.Transport;
 
 namespace FxSsh
@@ -17,9 +15,6 @@ namespace FxSsh
     // TODO: Rewrite using async pattern
     public class SshServer : IDisposable
     {
-        private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
-        private readonly Dictionary<string, ISshServerServiceFactory> _serviceFactories =
-            new Dictionary<string, ISshServerServiceFactory>();
         private readonly object _lock = new object();
         private readonly List<Session> _sessions = new List<Session>();
         private bool _isDisposed;
@@ -31,9 +26,9 @@ namespace FxSsh
         {
         }
 
-        public SshServer(SshServerConfiguration info)
+        public SshServer(SshServerConfiguration configuration)
         {
-            SshServerConfiguration = info;
+            SshServerConfiguration = configuration.Clone();
         }
 
         public SshServerConfiguration SshServerConfiguration { get; }
@@ -53,8 +48,8 @@ namespace FxSsh
         #endregion
 
         public event EventHandler<ServerSession> ConnectionAccepted;
-        public event EventHandler<Exception> ExceptionRasied;
-        public event EventHandler<DetermineAlgorithmsArgs> PreKeyExchange;
+        public event EventHandler<Exception> ExceptionRaised;
+        public event EventHandler<DetermineAlgorithmsArgs> DetermineAlgorithms;
 
         public void Start()
         {
@@ -100,32 +95,6 @@ namespace FxSsh
                     }
             }
         }
-
-        public void AddHostKey(string type, string xml)
-        {
-            AddHostKey(type, Convert.FromBase64String(xml));
-        }
-
-        public void AddHostKey(string type, byte[] key)
-        {
-            if (!_hostKey.ContainsKey(type))
-                _hostKey.Add(type, key.ToArray());
-        }
-
-        public void AddServiceFactory(ISshServerServiceFactory factory)
-        {
-            _serviceFactories.Add(factory.GetServiceName(), factory);
-        }
-
-        public void AddUserauthService(IReadOnlyList<IServerMethodFactory> methods)
-        {
-            AddUserauthService(methods, new AnyServerAuthenticator());
-        }
-        
-        public void AddUserauthService(IReadOnlyList<IServerMethodFactory> methods, IServerAuthenticator authenticator)
-        {
-            AddServiceFactory(new UserauthServerServiceFactory(methods, authenticator));
-        }
         
         private void BeginAcceptSocket()
         {
@@ -150,7 +119,8 @@ namespace FxSsh
                 var socket = _listener.EndAcceptSocket(ar);
                 Task.Run(() =>
                 {
-                    var session = new ServerSession(socket, _hostKey, _serviceFactories, SshServerConfiguration.ServerBanner);
+                    var session = new ServerSession(socket, SshServerConfiguration.HostKeys,
+                        SshServerConfiguration.Services, SshServerConfiguration.ProgramVersion);
                     session.Disconnected += (ss, ee) =>
                     {
                         lock (_lock)
@@ -163,7 +133,7 @@ namespace FxSsh
                         _sessions.Add(session);
                     }
 
-                    session.DetermineAlgorithms += (s, e) => PreKeyExchange?.Invoke(s, e);
+                    session.DetermineAlgorithms += (s, e) => DetermineAlgorithms?.Invoke(s, e);
                     try
                     {
                         ConnectionAccepted?.Invoke(this, session);
@@ -172,12 +142,12 @@ namespace FxSsh
                     catch (SshConnectionException ex)
                     {
                         session.Disconnect(ex.DisconnectReason, ex.Message);
-                        ExceptionRasied?.Invoke(this, ex);
+                        ExceptionRaised?.Invoke(this, ex);
                     }
                     catch (Exception ex)
                     {
                         session.Disconnect();
-                        ExceptionRasied?.Invoke(this, ex);
+                        ExceptionRaised?.Invoke(this, ex);
                     }
                 });
             }

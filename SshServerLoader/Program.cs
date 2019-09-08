@@ -14,24 +14,26 @@ namespace SshServerLoader
 {
     internal class Program
     {
-        private static int windowWidth, windowHeight;
+        private static int _windowWidth, _windowHeight;
 
         private static void Main(string[] args)
         {
-            var server = new SshServer(new SshServerConfiguration(IPAddress.Loopback, 2222, "SSH-2.0-FxSsh"));
+            var config = new SshServerConfiguration(IPAddress.Loopback, 2222, "SSH-2.0-FxSsh")
             //server.AddHostKey("ssh-rsa", "BwIAAACkAABSU0EyAAQAAAEAAQADKjiW5UyIad8ITutLjcdtejF4wPA1dk1JFHesDMEhU9pGUUs+HPTmSn67ar3UvVj/1t/+YK01FzMtgq4GHKzQHHl2+N+onWK4qbIAMgC6vIcs8u3d38f3NFUfX+lMnngeyxzbYITtDeVVXcLnFd7NgaOcouQyGzYrHBPbyEivswsnqcnF4JpUTln29E1mqt0a49GL8kZtDfNrdRSt/opeexhCuzSjLPuwzTPc6fKgMc6q4MBDBk53vrFY2LtGALrpg3tuydh3RbMLcrVyTNT+7st37goubQ2xWGgkLvo+TZqu3yutxr1oLSaPMSmf9bTACMi5QDicB3CaWNe9eU73MzhXaFLpNpBpLfIuhUaZ3COlMazs7H9LCJMXEL95V6ydnATf7tyO0O+jQp7hgYJdRLR3kNAKT0HU8enE9ZbQEXG88hSCbpf1PvFUytb1QBcotDy6bQ6vTtEAZV+XwnUGwFRexERWuu9XD6eVkYjA4Y3PGtSXbsvhwgH0mTlBOuH4soy8MV4dxGkxM8fIMM0NISTYrPvCeyozSq+NDkekXztFau7zdVEYmhCqIjeMNmRGuiEo8ppJYj4CvR1hc8xScUIw7N4OnLISeAdptm97ADxZqWWFZHno7j7rbNsq5ysdx08OtplghFPx4vNHlS09LwdStumtUel5oIEVMYv+yWBYSPPZBcVY5YFyZFJzd0AOkVtUbEbLuzRs5AtKZG01Ip/8+pZQvJvdbBMLT1BUvHTrccuRbY03SHIaUM3cTUc=");
             //server.AddHostKey("ssh-dss", "BwIAAAAiAABEU1MyAAQAAG+6KQWB+crih2Ivb6CZsMe/7NHLimiTl0ap97KyBoBOs1amqXB8IRwI2h9A10R/v0BHmdyjwe0c0lPsegqDuBUfD2VmsDgrZ/i78t7EJ6Sb6m2lVQfTT0w7FYgVk3J1Deygh7UcbIbDoQ+refeRNM7CjSKtdR+/zIwO3Qub2qH+p6iol2iAlh0LP+cw+XlH0LW5YKPqOXOLgMIiO+48HZjvV67pn5LDubxru3ZQLvjOcDY0pqi5g7AJ3wkLq5dezzDOOun72E42uUHTXOzo+Ct6OZXFP53ZzOfjNw0SiL66353c9igBiRMTGn2gZ+au0jMeIaSsQNjQmWD+Lnri39n0gSCXurDaPkec+uaufGSG9tWgGnBdJhUDqwab8P/Ipvo5lS5p6PlzAQAAACqx1Nid0Ea0YAuYPhg+YolsJ/ce");
-            server.AddHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=");
+            .UseHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=")
             
             // TODO: split the SshServer and SshServerBuilder
-            server.AddUserauthService(new IServerMethodFactory[]
+            .UseUserauthService(new IServerMethodFactory[]
             {
                 new CallbackPublicKeyServerMethodFactory(CheckPublicKey), 
                 new CallbackPasswordServerMethodFactory(CheckPassword), 
                 new CallbackHostbasedServerMethodFactory(CheckHostbased), 
             });
             
-            server.PreKeyExchange += (s, e) =>
+            var server = new SshServer(config);
+            
+            server.DetermineAlgorithms += (s, e) =>
             {
                 // This looks ugly. User should have more convenient way to do this
                 e.EncryptionAlgorithmsClientToServer = e.EncryptionAlgorithmsClientToServer
@@ -109,8 +111,8 @@ namespace SshServerLoader
         private static void service_PtyReceived(object sender, PtyArgs e)
         {
             Console.WriteLine("Request to create a PTY received for terminal type {0}", e.Terminal);
-            windowWidth = (int) e.WidthChars;
-            windowHeight = (int) e.HeightRows;
+            _windowWidth = (int) e.WidthChars;
+            _windowHeight = (int) e.HeightRows;
         }
 
         private static void service_EnvReceived(object sender, EnvironmentArgs e)
@@ -161,7 +163,7 @@ namespace SshServerLoader
             {
                 // requirements: Windows 10 RedStone 5, 1809
                 // also, you can call powershell.exe
-                var terminal = new Terminal("cmd.exe", windowWidth, windowHeight);
+                var terminal = new Terminal("cmd.exe", _windowWidth, _windowHeight);
 
                 e.Channel.DataReceived += (ss, ee) => terminal.OnInput(ee);
                 e.Channel.CloseReceived += (ss, ee) => terminal.OnClose();

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
 using FxSsh.Services.Userauth.Server;
@@ -9,14 +10,14 @@ namespace FxSsh.Transport
 {
     public class ServerSession : Session
     {
-        private readonly IReadOnlyDictionary<string, byte[]> _hostKey;
+        private readonly IReadOnlyDictionary<string, PublicKeyAlgorithm> _hostKeys;
         private readonly IReadOnlyDictionary<string, ISshServerServiceFactory> _serviceFactories;
 
-        public ServerSession(Socket socket, IReadOnlyDictionary<string, byte[]> hostKey,
+        public ServerSession(Socket socket, IReadOnlyDictionary<string, PublicKeyAlgorithm> hostKeys,
             IReadOnlyDictionary<string, ISshServerServiceFactory> serviceFactories, string programVersion) : base(
             socket, programVersion)
         {
-            _hostKey = hostKey;
+            _hostKeys = hostKeys;
             _serviceFactories = serviceFactories;
         }
 
@@ -25,7 +26,7 @@ namespace FxSsh.Transport
         protected override KeyExchangeInitMessage LoadKexInitMessage()
         {
             var m = base.LoadKexInitMessage();
-            m.ServerHostKeyAlgorithms = m.ServerHostKeyAlgorithms.Where(_ => _hostKey.ContainsKey(_)).ToArray();
+            m.ServerHostKeyAlgorithms = m.ServerHostKeyAlgorithms.Where(_ => _hostKeys.ContainsKey(_)).ToArray();
             return m;
         }
 
@@ -55,8 +56,7 @@ namespace FxSsh.Transport
         {
             // be VERY attentive, when editing this. Algorithm names are strings, though no static checks for you
             var kexAlg = CryptoAlgorithms.KeyExchangeAlgorithms[exchangeContext.KeyExchange].Create();
-            var hostKeyAlg = CryptoAlgorithms.PublicKeyAlgorithms[exchangeContext.ServerIdentification]
-                .CreateFromInternalBlob(_hostKey[exchangeContext.ServerIdentification]);
+            var hostKeyAlg = _hostKeys[exchangeContext.ServerIdentification];
             var receiveEncryption= CryptoAlgorithms.EncryptionAlgorithms[exchangeContext.ReceiveEncryption];
             var transmitEncryption = CryptoAlgorithms.EncryptionAlgorithms[exchangeContext.TransmitEncryption];
             var receiveHmac = CryptoAlgorithms.HmacAlgorithms[exchangeContext.ReceiveHmac];
