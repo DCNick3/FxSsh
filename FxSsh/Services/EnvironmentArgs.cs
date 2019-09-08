@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using FxSsh.Services.Userauth;
+﻿using FxSsh.Services.Userauth.Server;
 
 namespace FxSsh.Services
 {
@@ -7,20 +6,17 @@ namespace FxSsh.Services
     {
         public EnvironmentArgs(SessionChannel channel, string name, string value, AuthInfo authInfo)
         {
-            Contract.Requires(channel != null);
-            Contract.Requires(name != null);
-            Contract.Requires(value != null);
-            Contract.Requires(authInfo != null);
-
             Channel = channel;
             Name = name;
             Value = value;
             AttachedAuthInfo = authInfo;
         }
 
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public SessionChannel Channel { get; }
         public string Name { get; }
         public string Value { get; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public AuthInfo AttachedAuthInfo { get; }
     }
 }

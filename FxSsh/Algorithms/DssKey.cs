@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Algorithms
 {
@@ -57,12 +58,12 @@ namespace FxSsh.Algorithms
             }
         }
 
-        public override bool VerifyData(byte[] data, byte[] signature)
+        protected override bool VerifyRawSignature(byte[] data, byte[] signature)
         {
             return _algorithm.VerifyData(data, signature);
         }
 
-        public override byte[] SignData(byte[] data)
+        protected override byte[] CreateRawSignature(byte[] data)
         {
             return _algorithm.SignData(data);
         }

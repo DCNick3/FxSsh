@@ -1,21 +1,16 @@
-﻿using System.Diagnostics.Contracts;
-using FxSsh.Services.Userauth;
+﻿using FxSsh.Services.Userauth.Server;
 
 namespace FxSsh.Services
 {
     public class TcpRequestArgs
     {
-        public TcpRequestArgs(SessionChannel channel, string host, int port, string originatorIP, int originatorPort,
+        public TcpRequestArgs(SessionChannel channel, string host, int port, string originatorIp, int originatorPort,
             AuthInfo authInfo)
         {
-            Contract.Requires(channel != null);
-            Contract.Requires(host != null);
-            Contract.Requires(originatorIP != null);
-
             Channel = channel;
             Host = host;
             Port = port;
-            OriginatorIP = originatorIP;
+            OriginatorIp = originatorIp;
             OriginatorPort = originatorPort;
             AttachedAuthInfo = authInfo;
         }
@@ -23,8 +18,9 @@ namespace FxSsh.Services
         public SessionChannel Channel { get; }
         public string Host { get; }
         public int Port { get; }
-        public string OriginatorIP { get; }
+        public string OriginatorIp { get; }
         public int OriginatorPort { get; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public AuthInfo AttachedAuthInfo { get; }
     }
 }

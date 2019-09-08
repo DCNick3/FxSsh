@@ -1,4 +1,5 @@
 ﻿using System;
+using FxSsh.Util;
 
 namespace FxSsh.Messages.Connection
 {
@@ -9,7 +10,7 @@ namespace FxSsh.Messages.Connection
             base.LoadPacketInternal(reader);
 
             if (ChannelType != "session")
-                throw new ArgumentException(string.Format("Channel type {0} is not valid.", ChannelType));
+                throw new ArgumentException($"Channel type {ChannelType} is not valid.");
         }
     }
 }

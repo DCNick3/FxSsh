@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 using FxSsh.Messages.Userauth;
+using FxSsh.Util;
 
 namespace FxSsh.Messages
 {
@@ -26,14 +26,12 @@ namespace FxSsh.Messages
 
         public void LoadPacket(byte[] bytes)
         {
-            Contract.Requires(bytes != null);
-
             RawBytes = bytes;
             using (var worker = new SshDataWorker(bytes))
             {
                 var number = worker.ReadByte();
                 if (number != MessageType)
-                    throw new ArgumentException(string.Format("Message type {0} is not valid.", number));
+                    throw new ArgumentException($"Message type {number} is not valid.");
 
                 LoadPacketInternal(worker);
             }
@@ -53,8 +51,6 @@ namespace FxSsh.Messages
 
         public static T LoadFrom<T>(Message message) where T : Message, new()
         {
-            Contract.Requires(message != null);
-
             var msg = new T();
             msg.LoadPacket(message.RawBytes);
             return msg;
@@ -67,20 +63,10 @@ namespace FxSsh.Messages
             return msg;
         }
 
-        protected virtual void LoadPacketInternal(SshDataWorker reader)
-        {
-            Contract.Requires(reader != null);
+        protected virtual void LoadPacketInternal(SshDataWorker reader) => throw new NotSupportedException();
 
-            throw new NotSupportedException();
-        }
+        protected virtual void SerializePacketInternal(SshDataWorker writer) => throw new NotSupportedException();
 
-        protected virtual void SerializePacketInternal(SshDataWorker writer)
-        {
-            Contract.Requires(writer != null);
-
-            throw new NotSupportedException();
-        }
-        
         public static Group GetGroup(byte number)
         {
             switch (number)

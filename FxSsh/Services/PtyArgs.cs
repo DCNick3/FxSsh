@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using FxSsh.Services.Userauth;
+﻿using FxSsh.Services.Userauth.Server;
 
 namespace FxSsh.Services
 {
@@ -8,11 +7,6 @@ namespace FxSsh.Services
         public PtyArgs(SessionChannel channel, string terminal, uint heightPx, uint heightRows, uint widthPx,
             uint widthChars, string modes, AuthInfo authInfo)
         {
-            Contract.Requires(channel != null);
-            Contract.Requires(terminal != null);
-            Contract.Requires(modes != null);
-            Contract.Requires(authInfo != null);
-
             Channel = channel;
             Terminal = terminal;
             HeightPx = heightPx;
@@ -24,6 +18,7 @@ namespace FxSsh.Services
             AttachedAuthInfo = authInfo;
         }
 
+        // ReSharper disable UnusedAutoPropertyAccessor.Global
         public SessionChannel Channel { get; }
         public string Terminal { get; }
         public uint HeightPx { get; }
@@ -32,5 +27,6 @@ namespace FxSsh.Services
         public uint WidthChars { get; }
         public string Modes { get; }
         public AuthInfo AttachedAuthInfo { get; }
+        // ReSharper restore UnusedAutoPropertyAccessor.Global
     }
 }

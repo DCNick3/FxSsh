@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using FxSsh.Services;
-using FxSsh.Services.Userauth;
+using FxSsh.Services.Userauth.Server;
+using FxSsh.Transport;
 
 namespace FxSsh
 {
+    /// <summary>
+    /// Provides ssh server functionality. Opens the listening socket and accepts connections for you
+    /// </summary>
+    // TODO: Move all configuration-related methods to another class
+    // TODO: Rewrite using async pattern
     public class SshServer : IDisposable
     {
         private readonly Dictionary<string, byte[]> _hostKey = new Dictionary<string, byte[]>();
@@ -22,18 +27,16 @@ namespace FxSsh
         private bool _started;
 
         public SshServer()
-            : this(new StartingInfo())
+            : this(new SshServerConfiguration())
         {
         }
 
-        public SshServer(StartingInfo info)
+        public SshServer(SshServerConfiguration info)
         {
-            Contract.Requires(info != null);
-
-            StartingInfo = info;
+            SshServerConfiguration = info;
         }
 
-        public StartingInfo StartingInfo { get; }
+        public SshServerConfiguration SshServerConfiguration { get; }
 
         #region IDisposable
 
@@ -51,7 +54,7 @@ namespace FxSsh
 
         public event EventHandler<ServerSession> ConnectionAccepted;
         public event EventHandler<Exception> ExceptionRasied;
-        public event EventHandler<PreKeyExchangeArgs> PreKeyExchange;
+        public event EventHandler<DetermineAlgorithmsArgs> PreKeyExchange;
 
         public void Start()
         {
@@ -61,9 +64,9 @@ namespace FxSsh
                 if (_started)
                     throw new InvalidOperationException("The server is already started.");
 
-                _listener = Equals(StartingInfo.LocalAddress, IPAddress.IPv6Any)
-                    ? TcpListener.Create(StartingInfo.Port) // dual stack
-                    : new TcpListener(StartingInfo.LocalAddress, StartingInfo.Port);
+                _listener = Equals(SshServerConfiguration.LocalAddress, IPAddress.IPv6Any)
+                    ? TcpListener.Create(SshServerConfiguration.Port) // dual stack
+                    : new TcpListener(SshServerConfiguration.LocalAddress, SshServerConfiguration.Port);
                 _listener.ExclusiveAddressUse = false;
                 _listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 _listener.Start();
@@ -100,17 +103,11 @@ namespace FxSsh
 
         public void AddHostKey(string type, string xml)
         {
-            Contract.Requires(type != null);
-            Contract.Requires(xml != null);
-
             AddHostKey(type, Convert.FromBase64String(xml));
         }
 
         public void AddHostKey(string type, byte[] key)
         {
-            Contract.Requires(type != null);
-            Contract.Requires(key != null);
-
             if (!_hostKey.ContainsKey(type))
                 _hostKey.Add(type, key.ToArray());
         }
@@ -153,7 +150,7 @@ namespace FxSsh
                 var socket = _listener.EndAcceptSocket(ar);
                 Task.Run(() =>
                 {
-                    var session = new ServerSession(socket, _hostKey, _serviceFactories, StartingInfo.ServerBanner);
+                    var session = new ServerSession(socket, _hostKey, _serviceFactories, SshServerConfiguration.ServerBanner);
                     session.Disconnected += (ss, ee) =>
                     {
                         lock (_lock)
@@ -166,7 +163,7 @@ namespace FxSsh
                         _sessions.Add(session);
                     }
 
-                    session.PreKeyExchange += (s, e) => PreKeyExchange?.Invoke(s, e);
+                    session.DetermineAlgorithms += (s, e) => PreKeyExchange?.Invoke(s, e);
                     try
                     {
                         ConnectionAccepted?.Invoke(this, session);

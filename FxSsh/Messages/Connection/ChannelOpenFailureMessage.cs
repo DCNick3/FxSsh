@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Messages.Connection
 {
@@ -10,6 +11,7 @@ namespace FxSsh.Messages.Connection
         public uint RecipientChannel { get; set; }
         public ChannelOpenFailureReason ReasonCode { get; set; }
         public string Description { get; set; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public string Language { get; set; }
 
         public override byte MessageType => MessageNumber;

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 
 namespace FxSsh.Messages
 {
@@ -8,12 +7,11 @@ namespace FxSsh.Messages
     {
         public MessageAttribute(string name, byte number)
         {
-            Contract.Requires(name != null);
-
             Name = name;
             Number = number;
         }
 
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public string Name { get; }
         public byte Number { get; }
     }

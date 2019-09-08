@@ -1,4 +1,6 @@
-﻿namespace FxSsh.Messages.Connection
+﻿using FxSsh.Util;
+
+namespace FxSsh.Messages.Connection
 {
     [Message("SSH_MSG_CHANNEL_SUCCESS", MessageNumber)]
     public class ChannelSuccessMessage : ConnectionServiceMessage

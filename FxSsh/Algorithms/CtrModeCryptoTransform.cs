@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace FxSsh.Algorithms
 {
@@ -9,12 +8,9 @@ namespace FxSsh.Algorithms
         private readonly byte[] _block;
         private readonly byte[] _iv;
         private readonly ICryptoTransform _transform;
-
-
+        
         public CtrModeCryptoTransform(SymmetricAlgorithm algorithm)
         {
-            Contract.Requires(algorithm != null);
-
             algorithm.Mode = CipherMode.ECB;
             algorithm.Padding = PaddingMode.None;
 
@@ -46,7 +42,8 @@ namespace FxSsh.Algorithms
                     outputBuffer[outputOffset + i + j] = (byte) (_block[j] ^ inputBuffer[inputOffset + i + j]);
 
                 var k = _iv.Length;
-                while (--k >= 0 && ++_iv[k] == 0) ;
+                while (--k >= 0 && ++_iv[k] == 0)
+                { }
             }
 
             return written;

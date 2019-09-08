@@ -5,7 +5,7 @@ namespace FxSsh.Messages
     public class UnknownMessage : Message
     {
         public uint SequenceNumber { get; set; }
-
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public byte UnknownMessageType { get; set; }
 
         public override byte MessageType => throw new NotSupportedException();

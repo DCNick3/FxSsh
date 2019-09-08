@@ -1,4 +1,5 @@
-using FxSsh.Services.Userauth;
+using FxSsh.Services.Userauth.Server;
+using FxSsh.Transport;
 
 namespace FxSsh.Services
 {

@@ -1,5 +1,5 @@
-﻿using System.Diagnostics.Contracts;
-using System.Text;
+﻿using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Messages
 {
@@ -8,15 +8,8 @@ namespace FxSsh.Messages
     {
         public const byte MessageNumber = 1;
 
-        public DisconnectMessage()
-        {
-        }
-
         public DisconnectMessage(DisconnectReason reasonCode, string description = "", string language = "en")
         {
-            Contract.Requires(description != null);
-            Contract.Requires(language != null);
-
             ReasonCode = reasonCode;
             Description = description;
             Language = language;

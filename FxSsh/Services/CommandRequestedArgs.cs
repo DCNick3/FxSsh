@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using FxSsh.Services.Userauth;
+﻿using FxSsh.Services.Userauth.Server;
 
 namespace FxSsh.Services
 {
@@ -7,10 +6,6 @@ namespace FxSsh.Services
     {
         public CommandRequestedArgs(SessionChannel channel, string type, string command, AuthInfo authInfo)
         {
-            Contract.Requires(channel != null);
-            Contract.Requires(command != null);
-            Contract.Requires(authInfo != null);
-
             Channel = channel;
             ShellType = type;
             CommandText = command;
@@ -20,6 +15,7 @@ namespace FxSsh.Services
         public SessionChannel Channel { get; }
         public string ShellType { get; }
         public string CommandText { get; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public AuthInfo AttachedAuthInfo { get; }
     }
 }

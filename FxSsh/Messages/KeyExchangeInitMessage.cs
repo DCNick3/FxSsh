@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Messages
 {
@@ -8,12 +9,12 @@ namespace FxSsh.Messages
     {
         public const byte MessageNumber = 20;
 
-        private static readonly RandomNumberGenerator _rng = new RNGCryptoServiceProvider();
+        private static readonly RandomNumberGenerator Rng = new RNGCryptoServiceProvider();
 
         public KeyExchangeInitMessage()
         {
             Cookie = new byte[16];
-            _rng.GetBytes(Cookie);
+            Rng.GetBytes(Cookie);
         }
 
         public byte[] Cookie { get; private set; }

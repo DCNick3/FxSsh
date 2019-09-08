@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
 using System.Threading;
 using FxSsh.Messages.Connection;
+using FxSsh.Transport;
 
 namespace FxSsh.Services
 {
     public abstract class Channel
     {
-        protected ConnectionService _connectionService;
-        protected EventWaitHandle _sendingWindowWaitHandle = new ManualResetEvent(false);
+        protected readonly ConnectionService connectionService;
+        protected readonly EventWaitHandle sendingWindowWaitHandle = new ManualResetEvent(false);
 
         public Channel(ConnectionService connectionService,
             uint clientChannelId, uint clientInitialWindowSize, uint clientMaxPacketSize,
             uint serverChannelId)
         {
-            Contract.Requires(connectionService != null);
-
-            _connectionService = connectionService;
+            this.connectionService = connectionService;
 
             ClientChannelId = clientChannelId;
             ClientInitialWindowSize = clientInitialWindowSize;
@@ -50,8 +48,6 @@ namespace FxSsh.Services
 
         public void SendData(byte[] data)
         {
-            Contract.Requires(data != null);
-
             if (data.Length == 0) return;
 
             var msg = new ChannelDataMessage();
@@ -65,7 +61,7 @@ namespace FxSsh.Services
                 var packetSize = Math.Min(Math.Min(ClientWindowSize, ClientMaxPacketSize), total);
                 if (packetSize == 0)
                 {
-                    _sendingWindowWaitHandle.WaitOne();
+                    sendingWindowWaitHandle.WaitOne();
                     continue;
                 }
 
@@ -74,7 +70,7 @@ namespace FxSsh.Services
                 Array.Copy(data, offset, buf, 0, packetSize);
 
                 msg.Data = buf;
-                _connectionService._session.SendMessage(msg);
+                connectionService.session.SendMessage(msg);
 
                 ClientWindowSize -= packetSize;
                 total -= packetSize;
@@ -89,7 +85,7 @@ namespace FxSsh.Services
 
             ServerMarkedEof = true;
             var msg = new ChannelEofMessage {RecipientChannel = ClientChannelId};
-            _connectionService._session.SendMessage(msg);
+            connectionService.session.SendMessage(msg);
         }
 
         public void SendClose(uint? exitCode = null)
@@ -99,17 +95,15 @@ namespace FxSsh.Services
 
             ServerClosed = true;
             if (exitCode.HasValue)
-                _connectionService._session.SendMessage(new ExitStatusMessage
+                connectionService.session.SendMessage(new ExitStatusMessage
                     {RecipientChannel = ClientChannelId, ExitStatus = exitCode.Value});
-            _connectionService._session.SendMessage(new ChannelCloseMessage {RecipientChannel = ClientChannelId});
+            connectionService.session.SendMessage(new ChannelCloseMessage {RecipientChannel = ClientChannelId});
 
             CheckBothClosed();
         }
 
         internal void OnData(byte[] data)
         {
-            Contract.Requires(data != null);
-
             ServerAttemptAdjustWindow((uint) data.Length);
 
             if (DataReceived != null)
@@ -120,16 +114,14 @@ namespace FxSsh.Services
         {
             ClientMarkedEof = true;
 
-            if (EofReceived != null)
-                EofReceived(this, EventArgs.Empty);
+            EofReceived?.Invoke(this, EventArgs.Empty);
         }
 
         internal void OnClose()
         {
             ClientClosed = true;
 
-            if (CloseReceived != null)
-                CloseReceived(this, EventArgs.Empty);
+            CloseReceived?.Invoke(this, EventArgs.Empty);
 
             CheckBothClosed();
         }
@@ -140,9 +132,10 @@ namespace FxSsh.Services
 
             // pulse multithreadings in same time and unsignal until thread switched
             // don't try to use AutoResetEvent
-            _sendingWindowWaitHandle.Set();
+            // TODO: WTF
+            sendingWindowWaitHandle.Set();
             Thread.Sleep(1);
-            _sendingWindowWaitHandle.Reset();
+            sendingWindowWaitHandle.Reset();
         }
 
         private void ServerAttemptAdjustWindow(uint messageLength)
@@ -150,7 +143,7 @@ namespace FxSsh.Services
             ServerWindowSize -= messageLength;
             if (ServerWindowSize <= ServerMaxPacketSize)
             {
-                _connectionService._session.SendMessage(new ChannelWindowAdjustMessage
+                connectionService.session.SendMessage(new ChannelWindowAdjustMessage
                 {
                     RecipientChannel = ClientChannelId,
                     BytesToAdd = ServerInitialWindowSize - ServerWindowSize
@@ -166,9 +159,9 @@ namespace FxSsh.Services
 
         internal void ForceClose()
         {
-            _connectionService.RemoveChannel(this);
-            _sendingWindowWaitHandle.Set();
-            _sendingWindowWaitHandle.Close();
+            connectionService.RemoveChannel(this);
+            sendingWindowWaitHandle.Set();
+            sendingWindowWaitHandle.Close();
         }
     }
 }

@@ -1,18 +1,15 @@
-﻿using System.Diagnostics.Contracts;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace FxSsh.Algorithms
 {
-    public class DiffieHellmanGroupSha1 : KexAlgorithm
+    public class DiffieHellmanGroupSha1 : KeyExchangeAlgorithm
     {
         private readonly DiffieHellman _exchangeAlgorithm;
 
         public DiffieHellmanGroupSha1(DiffieHellman algorithm)
         {
-            Contract.Requires(algorithm != null);
-
             _exchangeAlgorithm = algorithm;
-            _hashAlgorithm = new SHA1CryptoServiceProvider();
+            hashAlgorithm = new SHA1CryptoServiceProvider();
         }
 
         public override byte[] CreateKeyExchange()

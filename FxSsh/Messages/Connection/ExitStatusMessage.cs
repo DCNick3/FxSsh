@@ -1,4 +1,6 @@
-﻿namespace FxSsh.Messages.Connection
+﻿using FxSsh.Util;
+
+namespace FxSsh.Messages.Connection
 {
     public class ExitStatusMessage : ChannelRequestMessage
     {

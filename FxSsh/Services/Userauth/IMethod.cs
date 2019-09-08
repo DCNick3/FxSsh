@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FxSsh.Util;
 
 namespace FxSsh.Services.Userauth
 {
@@ -9,16 +10,5 @@ namespace FxSsh.Services.Userauth
         IReadOnlyDictionary<byte, Type> UsedMessageTypes();
         Type RequestType();
         bool IsUsable();
-    }
-
-    public interface IClientMethod : IMethod
-    {
-        void Configure(ClientSession session, string username, string serviceName);
-        void InitiateAuth();
-    }
-
-    public interface IServerMethod : IMethod
-    {
-        void Configure(ServerSession session, Action<AuthInfo> succeedCallback, Action<(AuthInfo auth, bool partial)> failedCallback);
     }
 }

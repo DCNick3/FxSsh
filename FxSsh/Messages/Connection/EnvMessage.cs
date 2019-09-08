@@ -1,7 +1,7 @@
 ﻿using System.Text;
-using FxSsh.Messages.Connection;
+using FxSsh.Util;
 
-namespace FxSsh.Messages
+namespace FxSsh.Messages.Connection
 {
     public class EnvMessage : ChannelRequestMessage
     {

@@ -1,73 +1,96 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Algorithms
 {
-    [ContractClass(typeof(PublicKeyAlgorithmContract))]
     public abstract class PublicKeyAlgorithm
     {
         public abstract string Name { get; }
+        
+        /// <summary>
+        /// Specifies whether algorithm instance contains only public key 
+        /// </summary>
         public abstract bool PublicOnly { get; }
-        public string GetFingerprint(string algo = "md5")
+        public string GetFingerprint(FingerprintType type = FingerprintType.Sha256)
         {
-            using (var hash = HashAlgorithm.Create(algo.ToUpper()))
+            using (var hash = HashAlgorithm.Create(type.ToString().ToUpper()))
             {
                 Debug.Assert(hash != null, "Invalid hash algorithm");
                 var bytes = hash.ComputeHash(ExportKeyAndCertificatesData());
-                switch (algo)
+                switch (type)
                 {
-                    case "md5":
+                    case FingerprintType.Md5:
                         return BitConverter.ToString(bytes).Replace('-', ':');
-                    case "sha256":
+                    case FingerprintType.Sha256:
                         return Convert.ToBase64String(bytes).Replace("=", "");
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(algo), algo, "must be md5 or sha256");
+                        throw new ArgumentOutOfRangeException(nameof(type), type, "must be Md5 or Sha256");
                 }
             }
         }
 
-        public byte[] GetSignature(byte[] signatureData)
+        public byte[] CreateSignature(byte[] data)
         {
-            Contract.Requires(signatureData != null);
-
-            using (var worker = new SshDataWorker(signatureData))
-            {
-                if (worker.ReadString(Encoding.ASCII) != Name)
-                    throw new CryptographicException("Signature was not created with this algorithm.");
-
-                var signature = worker.ReadBinary();
-                return signature;
-            }
-        }
-
-        public byte[] CreateSignatureData(byte[] data)
-        {
-            Contract.Requires(data != null);
-
             using (var worker = new SshDataWorker())
             {
-                var signature = SignData(data);
+                var rawSignature = CreateRawSignature(data);
 
                 worker.Write(Name, Encoding.ASCII);
-                worker.Write(signature);
+                worker.Write(rawSignature);
 
                 return worker.ToByteArray();
             }
         }
 
+        public bool VerifySignature(byte[] data, byte[] signature)
+        {
+            using (var worker = new SshDataWorker(signature))
+            {
+                var name = worker.ReadString(Encoding.ASCII);
+                var rawSignature = worker.ReadBinary();
+                
+                if (name != Name)
+                    throw new ArgumentException("was not created by this algorithm", nameof(signature));
+
+                return VerifyRawSignature(data, rawSignature);
+            }
+        }
+
+        /// <summary>
+        /// Imports key blob, including private key
+        /// </summary>
+        /// <param name="bytes">Previously exported key blob</param>
         public abstract PublicKeyAlgorithm ImportInternalBlob(byte[] bytes);
 
+        /// <summary>
+        /// Import public key data, structured as per ssh RFC
+        /// </summary>
+        /// <param name="data">Key and certificate data, as per ssh RFC</param>
         public abstract PublicKeyAlgorithm ImportKeyAndCertificatesData(byte[] data);
 
+        /// <summary>
+        /// Exports key blob, including private key
+        /// </summary>
+        /// <returns>Opaque blob, </returns>
         public abstract byte[] ExportInternalBlob();
 
+        /// <summary>
+        /// Exports public key, structured as per ssh RFC
+        /// </summary>
+        /// <returns>Public key, structured as per ssh RFC</returns>
         public abstract byte[] ExportKeyAndCertificatesData();
 
-        public abstract bool VerifyData(byte[] data, byte[] signature);
+        protected abstract bool VerifyRawSignature(byte[] data, byte[] signature);
 
-        public abstract byte[] SignData(byte[] data);
+        protected abstract byte[] CreateRawSignature(byte[] data);
+
+        public enum FingerprintType
+        {
+            Md5,
+            Sha256
+        }
     }
 }

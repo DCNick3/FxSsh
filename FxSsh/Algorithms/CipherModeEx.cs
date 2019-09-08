@@ -2,6 +2,7 @@
 {
     public enum CipherModeEx
     {
+        // ReSharper disable InconsistentNaming
         CBC,
         CTR
     }

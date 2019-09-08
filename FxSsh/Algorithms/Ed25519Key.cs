@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using FxSsh.Util;
 using NSec.Cryptography;
 
 namespace FxSsh.Algorithms
@@ -66,12 +67,12 @@ namespace FxSsh.Algorithms
             }
         }
 
-        public override bool VerifyData(byte[] data, byte[] signature)
+        protected override bool VerifyRawSignature(byte[] data, byte[] signature)
         {
             return _algorithm.Verify(_publicKey, data, signature);
         }
 
-        public override byte[] SignData(byte[] data)
+        protected override byte[] CreateRawSignature(byte[] data)
         {
             if (_privateKey == null)
                 throw new CryptographicException("No private key");

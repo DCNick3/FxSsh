@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using FxSsh.Util;
 
 namespace FxSsh.Messages.Connection
 {
@@ -7,7 +8,7 @@ namespace FxSsh.Messages.Connection
     {
         public string Host { get; private set; }
         public uint Port { get; private set; }
-        public string OriginatorIPAddress { get; private set; }
+        public string OriginatorIpAddress { get; private set; }
         public uint OriginatorPort { get; private set; }
 
         protected override void LoadPacketInternal(SshDataWorker reader)
@@ -15,11 +16,11 @@ namespace FxSsh.Messages.Connection
             base.LoadPacketInternal(reader);
 
             if (ChannelType != "direct-tcpip")
-                throw new ArgumentException(string.Format("Channel type {0} is not valid.", ChannelType));
+                throw new ArgumentException($"Channel type {ChannelType} is not valid.");
 
             Host = reader.ReadString(Encoding.ASCII);
             Port = reader.ReadUInt32();
-            OriginatorIPAddress = reader.ReadString(Encoding.ASCII);
+            OriginatorIpAddress = reader.ReadString(Encoding.ASCII);
             OriginatorPort = reader.ReadUInt32();
         }
     }

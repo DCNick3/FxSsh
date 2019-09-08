@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 
 namespace FxSsh.Algorithms
@@ -13,11 +12,6 @@ namespace FxSsh.Algorithms
         public EncryptionAlgorithm(SymmetricAlgorithm algorithm, int keySize, CipherModeEx mode, byte[] key, byte[] iv,
             bool isEncryption)
         {
-            Contract.Requires(algorithm != null);
-            Contract.Requires(key != null);
-            Contract.Requires(iv != null);
-            Contract.Requires(keySize == key.Length << 3);
-
             algorithm.KeySize = keySize;
             algorithm.Key = key;
             algorithm.IV = iv;
@@ -50,7 +44,7 @@ namespace FxSsh.Algorithms
                 case CipherModeEx.CTR:
                     return new CtrModeCryptoTransform(_algorithm);
                 default:
-                    throw new InvalidEnumArgumentException(string.Format("Invalid mode: {0}", _mode));
+                    throw new InvalidEnumArgumentException($"Invalid mode: {_mode}");
             }
         }
     }

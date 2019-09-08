@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using FxSsh;
 using FxSsh.Algorithms;
 using FxSsh.Services;
-using FxSsh.Services.Userauth;
+using FxSsh.Services.Userauth.Server;
+using FxSsh.Transport;
 using MiniTerm;
 
 namespace SshServerLoader
@@ -17,7 +18,7 @@ namespace SshServerLoader
 
         private static void Main(string[] args)
         {
-            var server = new SshServer(new StartingInfo(IPAddress.Loopback, 2222, "SSH-2.0-FxSsh"));
+            var server = new SshServer(new SshServerConfiguration(IPAddress.Loopback, 2222, "SSH-2.0-FxSsh"));
             //server.AddHostKey("ssh-rsa", "BwIAAACkAABSU0EyAAQAAAEAAQADKjiW5UyIad8ITutLjcdtejF4wPA1dk1JFHesDMEhU9pGUUs+HPTmSn67ar3UvVj/1t/+YK01FzMtgq4GHKzQHHl2+N+onWK4qbIAMgC6vIcs8u3d38f3NFUfX+lMnngeyxzbYITtDeVVXcLnFd7NgaOcouQyGzYrHBPbyEivswsnqcnF4JpUTln29E1mqt0a49GL8kZtDfNrdRSt/opeexhCuzSjLPuwzTPc6fKgMc6q4MBDBk53vrFY2LtGALrpg3tuydh3RbMLcrVyTNT+7st37goubQ2xWGgkLvo+TZqu3yutxr1oLSaPMSmf9bTACMi5QDicB3CaWNe9eU73MzhXaFLpNpBpLfIuhUaZ3COlMazs7H9LCJMXEL95V6ydnATf7tyO0O+jQp7hgYJdRLR3kNAKT0HU8enE9ZbQEXG88hSCbpf1PvFUytb1QBcotDy6bQ6vTtEAZV+XwnUGwFRexERWuu9XD6eVkYjA4Y3PGtSXbsvhwgH0mTlBOuH4soy8MV4dxGkxM8fIMM0NISTYrPvCeyozSq+NDkekXztFau7zdVEYmhCqIjeMNmRGuiEo8ppJYj4CvR1hc8xScUIw7N4OnLISeAdptm97ADxZqWWFZHno7j7rbNsq5ysdx08OtplghFPx4vNHlS09LwdStumtUel5oIEVMYv+yWBYSPPZBcVY5YFyZFJzd0AOkVtUbEbLuzRs5AtKZG01Ip/8+pZQvJvdbBMLT1BUvHTrccuRbY03SHIaUM3cTUc=");
             //server.AddHostKey("ssh-dss", "BwIAAAAiAABEU1MyAAQAAG+6KQWB+crih2Ivb6CZsMe/7NHLimiTl0ap97KyBoBOs1amqXB8IRwI2h9A10R/v0BHmdyjwe0c0lPsegqDuBUfD2VmsDgrZ/i78t7EJ6Sb6m2lVQfTT0w7FYgVk3J1Deygh7UcbIbDoQ+refeRNM7CjSKtdR+/zIwO3Qub2qH+p6iol2iAlh0LP+cw+XlH0LW5YKPqOXOLgMIiO+48HZjvV67pn5LDubxru3ZQLvjOcDY0pqi5g7AJ3wkLq5dezzDOOun72E42uUHTXOzo+Ct6OZXFP53ZzOfjNw0SiL66353c9igBiRMTGn2gZ+au0jMeIaSsQNjQmWD+Lnri39n0gSCXurDaPkec+uaufGSG9tWgGnBdJhUDqwab8P/Ipvo5lS5p6PlzAQAAACqx1Nid0Ea0YAuYPhg+YolsJ/ce");
             server.AddHostKey("ssh-ed25519", "GQ6qKeU8/fQ6r2FGrUkDU1aAlavjD90MooErxtCwgDo=");
@@ -59,10 +60,10 @@ namespace SshServerLoader
             Console.WriteLine("Accepted a client.");
 
             e.ServiceRegistered += e_ServiceRegistered;
-            e.KeysExchanged += e_KeysExchanged;
+            e.AlgorithmsDetermined += EAlgorithmsDetermined;
         }
 
-        private static void e_KeysExchanged(object sender, KeyExchangeArgs e)
+        private static void EAlgorithmsDetermined(object sender, AlgorithmsDeterminedArgs e)
         {
             /*foreach (var keyExchangeAlg in e.KeyExchangeAlgorithms)
                 Console.WriteLine("Key exchange algorithm: {0}", keyExchangeAlg);*/
@@ -97,7 +98,7 @@ namespace SshServerLoader
             if (!allow)
                 return;
 
-            var tcp = new TcpForwardService(e.Host, e.Port, e.OriginatorIP, e.OriginatorPort);
+            var tcp = new TcpForwardService(e.Host, e.Port, e.OriginatorIp, e.OriginatorPort);
             e.Channel.DataReceived += (ss, ee) => tcp.OnData(ee);
             e.Channel.CloseReceived += (ss, ee) => tcp.OnClose();
             tcp.DataReceived += (ss, ee) => e.Channel.SendData(ee);
@@ -121,7 +122,7 @@ namespace SshServerLoader
         {
             var (session, username, serviceName, key) = args;
             
-            Console.WriteLine($"User {username} with key {key.GetFingerprint("sha256")} wants {serviceName}");
+            Console.WriteLine($"User {username} with key {key.GetFingerprint()} wants {serviceName}");
             
             return false;
 

@@ -1,4 +1,6 @@
-﻿namespace FxSsh.Messages
+﻿using FxSsh.Util;
+
+namespace FxSsh.Messages
 {
     [Message("SSH_MSG_NEWKEYS", MessageNumber)]
     public class NewKeysMessage : Message

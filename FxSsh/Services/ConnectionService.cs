@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading;
 using FxSsh.Messages;
 using FxSsh.Messages.Connection;
-using FxSsh.Services.Userauth;
+using FxSsh.Services.Userauth.Server;
+using FxSsh.Transport;
+using FxSsh.Util;
 
 namespace FxSsh.Services
 {
@@ -14,15 +15,13 @@ namespace FxSsh.Services
         private readonly AuthInfo _auth;
         private readonly List<Channel> _channels = new List<Channel>();
         private readonly object _locker = new object();
-        protected internal readonly ServerSession _session;
+        protected internal readonly ServerSession session;
 
         private int _serverChannelCounter = -1;
 
         public ConnectionService(ServerSession session, AuthInfo auth)
         {
-            Contract.Requires(auth != null);
-
-            _session = session;
+            this.session = session;
             _auth = auth;
         }
 
@@ -35,18 +34,14 @@ namespace FxSsh.Services
             }
         }
 
-        public void HandleMessageCore(Message message)
-        {
-            Contract.Requires(message != null);
-
-            this.InvokeHandleMessage((ConnectionServiceMessage) message);
-        }
+        public void HandleMessageCore(Message message) => this.InvokeHandleMessage((ConnectionServiceMessage) message);
 
         public event EventHandler<CommandRequestedArgs> CommandOpened;
         public event EventHandler<EnvironmentArgs> EnvReceived;
         public event EventHandler<PtyArgs> PtyReceived;
         public event EventHandler<TcpRequestArgs> TcpForwardRequest;
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelOpenMessage message)
         {
             switch (message.ChannelType)
@@ -64,16 +59,18 @@ namespace FxSsh.Services
                     HandleMessage(forwardMsg);
                     break;
                 default:
-                    _session.SendMessage(new ChannelOpenFailureMessage
+                    session.SendMessage(new ChannelOpenFailureMessage
                     {
                         RecipientChannel = message.SenderChannel,
                         ReasonCode = ChannelOpenFailureReason.UnknownChannelType,
-                        Description = string.Format("Unknown channel type: {0}.", message.ChannelType)
+                        Description = $"Unknown channel type: {message.ChannelType}."
                     });
-                    throw new SshConnectionException(string.Format("Unknown channel type: {0}.", message.ChannelType));
+                    throw new SshConnectionException($"Unknown channel type: {message.ChannelType}.");
             }
         }
 
+        // ReSharper disable once UnusedMember.Local
+        // ReSharper disable once UnusedParameter.Local
         private void HandleMessage(ShouldIgnoreMessage message)
         {
         }
@@ -84,7 +81,7 @@ namespace FxSsh.Services
             var args = new TcpRequestArgs(channel,
                 message.Address,
                 (int) message.Port,
-                message.OriginatorIPAddress,
+                message.OriginatorIpAddress,
                 (int) message.OriginatorPort,
                 _auth);
             TcpForwardRequest?.Invoke(this, args);
@@ -96,12 +93,13 @@ namespace FxSsh.Services
             var args = new TcpRequestArgs(channel,
                 message.Host,
                 (int) message.Port,
-                message.OriginatorIPAddress,
+                message.OriginatorIpAddress,
                 (int) message.OriginatorPort,
                 _auth);
             TcpForwardRequest?.Invoke(this, args);
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelRequestMessage message)
         {
             switch (message.RequestType)
@@ -111,20 +109,20 @@ namespace FxSsh.Services
                     HandleMessage(msg);
                     break;
                 case "shell":
-                    var shell_msg = Message.LoadFrom<ShellRequestMessage>(message);
-                    HandleMessage(shell_msg);
+                    var shellMsg = Message.LoadFrom<ShellRequestMessage>(message);
+                    HandleMessage(shellMsg);
                     break;
                 case "pty-req":
-                    var pty_msg = Message.LoadFrom<PtyRequestMessage>(message);
-                    HandleMessage(pty_msg);
+                    var ptyMsg = Message.LoadFrom<PtyRequestMessage>(message);
+                    HandleMessage(ptyMsg);
                     break;
                 case "env":
-                    var env_msg = Message.LoadFrom<EnvMessage>(message);
-                    HandleMessage(env_msg);
+                    var envMsg = Message.LoadFrom<EnvMessage>(message);
+                    HandleMessage(envMsg);
                     break;
                 case "subsystem":
-                    var sub_msg = Message.LoadFrom<SubsystemRequestMessage>(message);
-                    HandleMessage(sub_msg);
+                    var subMsg = Message.LoadFrom<SubsystemRequestMessage>(message);
+                    HandleMessage(subMsg);
                     break;
                 case "window-change":
                     break;
@@ -133,22 +131,22 @@ namespace FxSsh.Services
                     if (message.WantReply)
                     {
                         var c = FindChannelByServerId<SessionChannel>(message.RecipientChannel);
-                        _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = c.ClientChannelId});
+                        session.SendMessage(new ChannelSuccessMessage {RecipientChannel = c.ClientChannelId});
                     }
 
                     break;
                 case "winadj@putty.projects.tartarus.org":
                     //https://tartarus.org/~simon/putty-snapshots/htmldoc/AppendixF.html
                     var channel = FindChannelByServerId<SessionChannel>(message.RecipientChannel);
-                    _session.SendMessage(new ChannelFailureMessage {RecipientChannel = channel.ClientChannelId});
+                    session.SendMessage(new ChannelFailureMessage {RecipientChannel = channel.ClientChannelId});
                     break;
                 default:
                     if (message.WantReply)
-                        _session.SendMessage(new ChannelFailureMessage
+                        session.SendMessage(new ChannelFailureMessage
                         {
                             RecipientChannel = FindChannelByServerId<Channel>(message.RecipientChannel).ClientChannelId
                         });
-                    throw new SshConnectionException(string.Format("Unknown request type: {0}.", message.RequestType));
+                    throw new SshConnectionException($"Unknown request type: {message.RequestType}.");
             }
         }
 
@@ -159,7 +157,7 @@ namespace FxSsh.Services
             EnvReceived?.Invoke(this, new EnvironmentArgs(channel, message.Name, message.Value, _auth));
 
             if (message.WantReply)
-                _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
+                session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
         }
 
         private void HandleMessage(PtyRequestMessage message)
@@ -176,27 +174,31 @@ namespace FxSsh.Services
                     message.modes, _auth));
 
             if (message.WantReply)
-                _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
+                session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelDataMessage message)
         {
             var channel = FindChannelByServerId<Channel>(message.RecipientChannel);
             channel.OnData(message.Data);
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelWindowAdjustMessage message)
         {
             var channel = FindChannelByServerId<Channel>(message.RecipientChannel);
             channel.ClientAdjustWindow(message.BytesToAdd);
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelEofMessage message)
         {
             var channel = FindChannelByServerId<Channel>(message.RecipientChannel);
             channel.OnEof();
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ChannelCloseMessage message)
         {
             var channel = FindChannelByServerId<Channel>(message.RecipientChannel);
@@ -230,7 +232,7 @@ namespace FxSsh.Services
                 MaximumPacketSize = channel.ServerMaxPacketSize
             };
 
-            _session.SendMessage(msg);
+            session.SendMessage(msg);
             return channel;
         }
 
@@ -239,7 +241,7 @@ namespace FxSsh.Services
             var channel = FindChannelByServerId<SessionChannel>(message.RecipientChannel);
 
             if (message.WantReply)
-                _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
+                session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
 
             CommandOpened?.Invoke(this, new CommandRequestedArgs(channel, "shell", null, _auth));
         }
@@ -249,7 +251,7 @@ namespace FxSsh.Services
             var channel = FindChannelByServerId<SessionChannel>(message.RecipientChannel);
 
             if (message.WantReply)
-                _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
+                session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
 
             CommandOpened?.Invoke(this, new CommandRequestedArgs(channel, "exec", message.Command, _auth));
         }
@@ -259,22 +261,9 @@ namespace FxSsh.Services
             var channel = FindChannelByServerId<SessionChannel>(message.RecipientChannel);
 
             if (message.WantReply)
-                _session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
+                session.SendMessage(new ChannelSuccessMessage {RecipientChannel = channel.ClientChannelId});
 
             CommandOpened?.Invoke(this, new CommandRequestedArgs(channel, "subsystem", message.Name, _auth));
-        }
-
-        private T FindChannelByClientId<T>(uint id) where T : Channel
-        {
-            lock (_locker)
-            {
-                var channel = _channels.FirstOrDefault(x => x.ClientChannelId == id) as T;
-                if (channel == null)
-                    throw new SshConnectionException(string.Format("Invalid client channel id {0}.", id),
-                        DisconnectReason.ProtocolError);
-
-                return channel;
-            }
         }
 
         private T FindChannelByServerId<T>(uint id) where T : Channel
@@ -283,7 +272,7 @@ namespace FxSsh.Services
             {
                 var channel = _channels.FirstOrDefault(x => x.ServerChannelId == id) as T;
                 if (channel == null)
-                    throw new SshConnectionException(string.Format("Invalid server channel id {0}.", id),
+                    throw new SshConnectionException($"Invalid server channel id {id}.",
                         DisconnectReason.ProtocolError);
 
                 return channel;
