@@ -1,4 +1,4 @@
-﻿namespace FxSsh.Services
+﻿namespace FxSsh.Services.Connection
 {
     public class SessionChannel : Channel
     {

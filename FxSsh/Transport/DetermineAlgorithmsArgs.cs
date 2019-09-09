@@ -1,4 +1,4 @@
-namespace FxSsh.Services
+namespace FxSsh.Transport
 {
     public class DetermineAlgorithmsArgs
     {

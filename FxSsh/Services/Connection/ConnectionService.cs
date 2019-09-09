@@ -8,10 +8,12 @@ using FxSsh.Services.Userauth.Server;
 using FxSsh.Transport;
 using FxSsh.Util;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Connection
 {
     public class ConnectionService : ISshService, IMessageHandler
     {
+        public const string ServiceName = "ssh-userauth";
+        
         private readonly AuthInfo _auth;
         private readonly List<Channel> _channels = new List<Channel>();
         private readonly object _locker = new object();

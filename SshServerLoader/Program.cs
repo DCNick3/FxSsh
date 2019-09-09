@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FxSsh;
 using FxSsh.Algorithms;
 using FxSsh.Services;
+using FxSsh.Services.Connection;
 using FxSsh.Services.Userauth.Server;
 using FxSsh.Transport;
 using MiniTerm;

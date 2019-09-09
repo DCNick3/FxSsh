@@ -1,6 +1,4 @@
-using FxSsh.Services.Userauth.Client;
-
-namespace FxSsh.Services
+namespace FxSsh.Services.Userauth.Client
 {
     public class KnownPasswordAuthHandler : IPasswordAuthHandler
     {

@@ -11,6 +11,7 @@ using System.Threading;
 using FxSsh.Algorithms;
 using FxSsh.Messages;
 using FxSsh.Services;
+using FxSsh.Services.Connection;
 using FxSsh.Services.Userauth;
 using FxSsh.Util;
 
@@ -584,7 +585,19 @@ namespace FxSsh.Transport
         protected void HandleMessage(UserauthServiceMessage message)
         {
             var service = GetService<UserauthService>();
-            service?.HandleMessageCore(message);
+            if (service == null)
+                SendMessage(new UnimplementedMessage { SequenceNumber = _inboundPacketSequence });
+            else
+                service?.HandleMessageCore(message);
+        }
+
+        protected void HandleMessage(ConnectionServiceMessage message)
+        {
+            var service = GetService<ConnectionService>();
+            if (service == null)
+                SendMessage(new UnimplementedMessage { SequenceNumber = _inboundPacketSequence });
+            else
+                service?.HandleMessageCore(message);
         }
 
         protected void HandleMessage(UnimplementedMessage message)

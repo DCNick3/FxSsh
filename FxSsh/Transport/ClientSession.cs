@@ -1,6 +1,7 @@
 using System;
 using System.Net.Sockets;
 using FxSsh.Messages;
+using FxSsh.Services.Userauth;
 using FxSsh.Services.Userauth.Client;
 
 namespace FxSsh.Transport
@@ -91,16 +92,17 @@ namespace FxSsh.Transport
 
             SendMessage(new NewKeysMessage());
 
+            //TODO: What should we do here? In some protocol extensions this may need to be changed
             SendMessage(new ServiceRequestMessage
             {
-                ServiceName = "ssh-userauth"
+                ServiceName = UserauthService.ServiceName
             });
         }
 
         // ReSharper disable once UnusedMember.Local
         private void HandleMessage(ServiceAcceptMessage message)
         {
-            if (message.ServiceName == "ssh-userauth")
+            if (message.ServiceName == UserauthService.ServiceName)
                 RegisterService(new UserauthClientService(_authParameters, this));
             else
                 throw new SshConnectionException("Unknown service accepted", DisconnectReason.ProtocolError);

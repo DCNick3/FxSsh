@@ -75,6 +75,10 @@ namespace FxSsh
         {
             return UseServiceFactory(new UserauthServerServiceFactory(methods, authenticator));
         }
+        public SshServerConfiguration UseConnectionService()
+        {
+            return UseServiceFactory(new ConnectionServerServiceFactory());
+        }
         
         public SshServerConfiguration UseBindAddress(IPAddress localAddress)
         {

@@ -3,7 +3,7 @@ using System.Threading;
 using FxSsh.Messages.Connection;
 using FxSsh.Transport;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Connection
 {
     public abstract class Channel
     {

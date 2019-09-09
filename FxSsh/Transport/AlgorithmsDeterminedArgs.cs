@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace FxSsh.Services
+namespace FxSsh.Transport
 {
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public class AlgorithmsDeterminedArgs : EventArgs

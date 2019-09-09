@@ -124,12 +124,6 @@ namespace FxSsh.Transport
                 DisconnectReason.ServiceNotAvailable);
         }
 
-        protected void HandleMessage(ConnectionServiceMessage message)
-        {
-            var service = GetService<ConnectionService>();
-            service?.HandleMessageCore(message);
-        }
-
         #endregion
     }
 }

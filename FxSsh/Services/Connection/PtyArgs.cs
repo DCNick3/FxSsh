@@ -1,6 +1,6 @@
 ﻿using FxSsh.Services.Userauth.Server;
 
-namespace FxSsh.Services
+namespace FxSsh.Services.Connection
 {
     public class PtyArgs
     {

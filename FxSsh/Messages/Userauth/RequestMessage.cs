@@ -3,6 +3,10 @@ using FxSsh.Util;
 
 namespace FxSsh.Messages.Userauth
 {
+    /// <summary>
+    /// Class for all userauth requests. Concrete requests are instantiated
+    ///     in UserauthServerService's RequestMessage handler
+    /// </summary>
     [Message("SSH_MSG_USERAUTH_REQUEST", MessageNumber)]
     public class RequestMessage : UserauthServiceMessage
     {
